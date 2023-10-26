@@ -1,0 +1,8 @@
+LICENSE
+README.md
+setup.py
+qexp.egg-info/PKG-INFO
+qexp.egg-info/SOURCES.txt
+qexp.egg-info/dependency_links.txt
+qexp.egg-info/requires.txt
+qexp.egg-info/top_level.txt
