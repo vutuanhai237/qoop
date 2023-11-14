@@ -2,7 +2,7 @@
 import logging
 import qiskit
 import numpy as np
-import enum
+import enum, typing
 from qiskit.circuit.library.standard_gates import (IGate, U1Gate, U2Gate, U3Gate, XGate,
                                                    YGate, ZGate, HGate, SGate, SdgGate, TGate,
                                                    TdgGate, RXGate, RYGate, RZGate, CXGate,

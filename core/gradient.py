@@ -1,5 +1,6 @@
 
 import qiskit
+import qiskit.quantum_info as qi
 import numpy as np
 import typing
 import scipy
@@ -19,11 +20,11 @@ def single_2term_psr(qc: qiskit.QuantumCircuit, thetas: np.ndarray, i: int) -> f
         - float: gradient value
     """
     thetas1, thetas2 = thetas.copy(), thetas.copy()
-    thetas1[i] += qtm.constant.two_term_psr['s']
-    thetas2[i] -= qtm.constant.two_term_psr['s']
-    return -qtm.constant.two_term_psr['r'] * (
-        qtm.measure.measure(qc.copy(), thetas1) -
-        qtm.measure.measure(qc.copy(), thetas2))
+    thetas1[i] += constant.two_term_psr['s']
+    thetas2[i] -= constant.two_term_psr['s']
+    return -constant.two_term_psr['r'] * (
+        measure.measure(qc.copy(), thetas1) -
+        measure.measure(qc.copy(), thetas2))
 
 
 def single_4term_psr(qc: qiskit.QuantumCircuit, thetas: np.ndarray, i: int) -> float:
@@ -39,15 +40,15 @@ def single_4term_psr(qc: qiskit.QuantumCircuit, thetas: np.ndarray, i: int) -> f
     """
     thetas1, thetas2 = thetas.copy(), thetas.copy()
     thetas3, thetas4 = thetas.copy(), thetas.copy()
-    thetas1[i] += qtm.constant.four_term_psr['alpha']
-    thetas2[i] -= qtm.constant.four_term_psr['alpha']
-    thetas3[i] += qtm.constant.four_term_psr['beta']
-    thetas4[i] -= qtm.constant.four_term_psr['beta']
-    return - (qtm.constant.four_term_psr['d_plus'] * (
-        qtm.measure.measure(qc.copy(), thetas1) -
-        qtm.measure.measure(qc.copy(), thetas2)) - qtm.constant.four_term_psr['d_minus'] * (
-        qtm.measure.measure(qc.copy(), thetas3) -
-        qtm.measure.measure(qc.copy(), thetas4)))
+    thetas1[i] += constant.four_term_psr['alpha']
+    thetas2[i] -= constant.four_term_psr['alpha']
+    thetas3[i] += constant.four_term_psr['beta']
+    thetas4[i] -= constant.four_term_psr['beta']
+    return - (constant.four_term_psr['d_plus'] * (
+        measure.measure(qc.copy(), thetas1) -
+        measure.measure(qc.copy(), thetas2)) - constant.four_term_psr['d_minus'] * (
+        measure.measure(qc.copy(), thetas3) -
+        measure.measure(qc.copy(), thetas4)))
 
 
 def grad_loss(qc: qiskit.QuantumCircuit, thetas: np.ndarray) -> np.ndarray:

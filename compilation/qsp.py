@@ -1,6 +1,7 @@
 import qiskit, typing, types, pickle, os
 import numpy as np
 from ..core import metric
+
 class QuantumStatePreparation:
     def __init__(self, file_name: str):
         """Load QSP from .qspobj file

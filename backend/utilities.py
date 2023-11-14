@@ -89,11 +89,11 @@ class ProgressBar(object):
         self.p.close()
 
 
-def get_wires_of_gate(gate: qiskit.QuantumGate) -> typing.List[int]:
+def get_wires_of_gate(gate: qiskit.circuit.Gate) -> typing.List[int]:
     """Get index bit that gate act on
 
     Args:
-        - gate (qiskit.QuantumGate): Quantum gate
+        - gate (qiskit.circuit.Gate): Quantum gate
 
     Returns:
         - List[int]: list of index bits
@@ -104,11 +104,11 @@ def get_wires_of_gate(gate: qiskit.QuantumGate) -> typing.List[int]:
     return list_wire
 
 
-def is_gate_in_list_wires(gate: qiskit.QuantumGate, wires: typing.List[int]) -> bool:
+def is_gate_in_list_wires(gate: qiskit.circuit.Gate, wires: typing.List[int]) -> bool:
     """Check if a gate lies on the next layer or not
 
     Args:
-        - gate (qiskit.QuantumGate): Quantum gate
+        - gate (qiskit.circuit.Gate): Quantum gate
         - wires (typing.List[int]): list of index bits
 
     Returns:

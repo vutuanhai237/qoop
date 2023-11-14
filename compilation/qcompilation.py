@@ -6,8 +6,7 @@ import types
 import qiskit
 from ..core import gradient, optimizer, loss, metric, measure
 from ..backend import utilities
-from .qsp import QuantumStatePreparation
-from .qst import QuantumStateTomography
+
 
 class QuantumCompilation():
     def __init__(self) -> None:
@@ -315,20 +314,20 @@ class QuantumCompilation():
         animator.save(file_name)
 
     def save(self, ansatz, state, file_name):
-        if (len(self.u.parameters)) > 0:
-            qspobj = QuantumStatePreparation(
-                self.u,
-                self.vdagger,
-                self.thetas,
-                ansatz)
-            qspobj.save(state, file_name)
-        else:
-            qstobj = QuantumStateTomography(
-                self.u,
-                self.vdagger,
-                self.thetas,
-                ansatz)
-            qstobj.save(state, file_name)
+        # if (len(self.u.parameters)) > 0:
+        #     qspobj = QuantumStatePreparation(
+        #         self.u,
+        #         self.vdagger,
+        #         self.thetas,
+        #         ansatz)
+        #     qspobj.save(state, file_name)
+        # else:
+        #     qstobj = QuantumStateTomography(
+        #         self.u,
+        #         self.vdagger,
+        #         self.thetas,
+        #         ansatz)
+        #     qstobj.save(state, file_name)
         return
 
     def reset(self):

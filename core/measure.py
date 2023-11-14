@@ -1,4 +1,7 @@
 import qiskit
+import qiskit.quantum_info as qi
+import numpy as np, typing, types
+from qiskit.primitives import Sampler
 from qiskit.providers.aer import noise
 from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
 from ..backend import constant
@@ -68,7 +71,7 @@ def generate_measurement_filter(num_qubits: int, noise_model) -> CompleteMeasFit
     return meas_filter
 
 
-def measure(qc: qiskit.QuantumCircuit, qubits, cbits=[]):
+def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray, mode: str = 'theory'):
     """Measuring the quantu circuit which fully measurement gates
 
     Args:
@@ -79,7 +82,7 @@ def measure(qc: qiskit.QuantumCircuit, qubits, cbits=[]):
         - float: Frequency of 00.. cbit
     """
     if mode == constant.MeasureMode.THEORY.value:
-        operator = DensityMatrix(qc.assign_parameters(parameter_values)).data
+        operator = qi.DensityMatrix(qc.assign_parameters(parameter_values)).data
         result = np.real(operator[0][0])
     elif mode == constant.MeasureMode.SIMULATE.value:
         qc.measure_all()
