@@ -7,7 +7,7 @@ setup(
     author='Vu Tuan Hai',
     author_email='haivt@uit.edu.vn',
     # Needed to actually package something
-    packages=['qexp'],
+    packages=['qsee'],
     # Needed for dependencies
     install_requires=['qiskit',
                       'qiskit-aer',

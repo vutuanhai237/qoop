@@ -251,6 +251,31 @@ def add_layer_into_circuit(qc: qiskit.QuantumCircuit, layer: typing.List) -> qis
             qc.cz(wire[0], wire[1])
     return qc
 
+def save_circuit(qc: qiskit.QuantumCircuit, file_name: str) -> None:
+    """Save circuit as qpy object
+
+    Args:
+        qc (qiskit.QuantumCircuit): Saved circuit
+        file_name (str): Path
+    """
+
+    with open(f"{file_name}.qpy", "wb") as qpy_file_write:
+        qiskit.qpy.dump(qc, qpy_file_write)
+    return
+
+
+def load_circuit(file_name: str) -> qiskit.QuantumCircuit:
+    """Load circuit from a specific path
+
+    Args:
+        file_name (str): Path
+
+    Returns:
+        qiskit.QuantumCircuit
+    """
+    with open(f"{file_name}.qpy", "rb") as qpy_file_read:
+        qc = qiskit.qpy.load(qpy_file_read)[0]
+    return qc
 
 def unit_vector(i: int, length: int) -> np.ndarray:
     """Create vector where a[i] = 1 and a[j] = 0 with j <> i
@@ -446,3 +471,7 @@ def compose_circuit(qcs: typing.List[qiskit.QuantumCircuit]) -> qiskit.QuantumCi
                 i += 2
             qc.append(instruction[0], instruction[1])
     return qc
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]

@@ -12,6 +12,55 @@ torch.cuda.manual_seed(1000)
 np.random.seed(1000)
 random.seed(1000)
 
+class NodeDAG:
+    def __init__(self, node: qiskit.dagcircuit.DAGOpNode):
+        self.id = id(node)
+        self.op_name = node.op.name
+        self.index = 0
+        self.successor = []
+    def set_index(self, index):
+        self.index = index
+    def set_successor(self, successor):
+        self.successor = successor
+
+class TinyDAG():
+    def __init__(self, dag: qiskit.dagcircuit.DAGCircuit):
+        self.dag = dag
+        self.nodes = []
+        for index, node in enumerate(self.dag.op_nodes()):
+            tiny_node = NodeDAG(node)
+            tiny_node.set_index(index)
+            self.nodes.append(tiny_node)
+    def find_node(self, id):
+        for i in range(len(self.nodes)):
+            if (self.nodes[i].id == id): 
+                return self.nodes[i]
+        return None
+    def construct(self):
+        for node in (self.dag.op_nodes()): 
+            sucessors = []
+            for node_in in self.dag.quantum_successors(node):
+                sucessor = self.find_node(id(node_in))
+                if sucessor is not None:
+                    sucessors.append(sucessor)
+            self.nodes[self.find_node(id(node)).index].successor = sucessors
+        return
+
+def circuit_to_adjacency_matrix(qc: qiskit.QuantumCircuit):
+    dag = qiskit.converters.circuit_to_dag(qc)
+    tinyDAG = TinyDAG(dag)
+    tinyDAG.construct()
+    dag_size = qc.num_qubits * qc.depth()
+    adjacency_matrix = np.zeros((dag_size, dag_size), dtype=np.float64)
+    for i in range(len(tinyDAG.nodes)):
+        for node in tinyDAG.nodes[i].successor:
+            distance_info = None
+            for d in qtm.constant.gate_distaces:
+                if d["name_gate1"] == tinyDAG.nodes[i].op_name and d["name_gate2"] == node.op_name:
+                    distance_info = d
+            adjacency_matrix[tinyDAG.nodes[i].index][node.index] = distance_info['distance']
+    return adjacency_matrix
+
 def convert_string_to_int(string):
     return sum([ord(char) - 65 for char in string])
 

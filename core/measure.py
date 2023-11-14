@@ -78,34 +78,44 @@ def measure(qc: qiskit.QuantumCircuit, qubits, cbits=[]):
     Returns:
         - float: Frequency of 00.. cbit
     """
-    n = len(qubits)
-    if cbits == []:
-        cbits = qubits.copy()
-    if qc.num_clbits == 0:
-        cr = qiskit.ClassicalRegister(qc.num_qubits, 'c')
-        qc.add_register(cr)
-    for i in range(0, n):
-        qc.measure(qubits[i], cbits[i])
-    # qc.measure_all() #
-    if constant.NOISE_PROB > 0:
-        noise_model = generate_noise_model(
-            n, constant.NOISE_PROB)
-        results = qiskit.execute(qc, backend=constant.backend,
-                                 noise_model=noise_model,
-                                 shots=constant.NUM_SHOTS).result()
-        # Raw counts
-        counts = results.get_counts()
-        # Mitigating noise based on https://qiskit.org/textbook/ch-quantum-hardware/measurement-error-mitigation.html
-        meas_filter = generate_measurement_filter(
-            n, noise_model=noise_model)
-        # # Mitigated counts
-        counts = meas_filter.apply(counts.copy())
-    else:
-        counts = qiskit.execute(
-            qc, backend=constant.backend,
-            shots=constant.NUM_SHOTS).result().get_counts()
+    if mode == constant.MeasureMode.THEORY.value:
+        operator = DensityMatrix(qc.assign_parameters(parameter_values)).data
+        result = np.real(operator[0][0])
+    elif mode == constant.MeasureMode.SIMULATE.value:
+        qc.measure_all()
+        sampler = Sampler()
+        result = sampler.run(qc, parameter_values=parameter_values, shots = 10000).result().quasi_dists[0].get(0, 0)
+    return result
+    # The below is old version
+    # n = len(qubits)
+    # if cbits == []:
+    #     cbits = qubits.copy()
+    # if qc.num_clbits == 0:
+    #     cr = qiskit.ClassicalRegister(qc.num_qubits, 'c')
+    #     qc.add_register(cr)
+    # for i in range(0, n):
+    #     qc.measure(qubits[i], cbits[i])
+    # # qc.measure_all() # 
+    # if qtm.constant.NOISE_PROB > 0:
+    #     noise_model = generate_noise_model(
+    #         n, qtm.constant.NOISE_PROB)
+    #     results = qiskit.execute(qc, backend=qtm.constant.backend,
+    #                              noise_model=noise_model,
+    #                              shots=qtm.constant.NUM_SHOTS).result()
+    #     # Raw counts
+    #     counts = results.get_counts()
+    #     # Mitigating noise based on https://qiskit.org/textbook/ch-quantum-hardware/measurement-error-mitigation.html
+    #     meas_filter = generate_measurement_filter(
+    #         n, noise_model=noise_model)
+    #     # # Mitigated counts
+    #     counts = meas_filter.apply(counts.copy())
+    # else:
+    #     counts = qiskit.execute(
+    #         qc, backend=qtm.constant.backend #,shots=qtm.constant.NUM_SHOTS
+    #     ).result().get_counts()
 
-    return counts.get("0" * len(qubits), 0) / constant.NUM_SHOTS
+    # return counts.get("0" * len(qubits), 0) / qtm.constant.NUM_SHOTS
+
 
 
 def x_measurement(qc: qiskit.QuantumCircuit, qubits, cbits=[]):

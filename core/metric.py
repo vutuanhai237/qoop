@@ -3,6 +3,7 @@ from ..core import ansatz
 from ..backend import constant
 import numpy as np
 import qiskit
+import qiskit.quantum_info as qi
 import scipy
 import typing, types
 
@@ -22,7 +23,7 @@ def calculate_ce_metric(u: qiskit.QuantumCircuit, exact=False) -> float:
     swap_test_circuit = ansatz.parallized_swap_test(u)
 
     if exact:
-        statevec = qiskit.quantum_info.Statevector(swap_test_circuit)
+        statevec = qi.Statevector(swap_test_circuit)
         statevec.seed(value=42)
         probs = statevec.evolve(
             swap_test_circuit).probabilities_dict(qargs=qubit)
@@ -47,8 +48,8 @@ def extract_state(qc: qiskit.QuantumCircuit) -> typing.Tuple:
     Returns:
        - tuple: state vector and density matrix
     """
-    psi = qiskit.quantum_info.Statevector.from_instruction(qc)
-    rho_psi = qiskit.quantum_info.DensityMatrix(psi)
+    psi = qi.Statevector.from_instruction(qc)
+    rho_psi = qi.DensityMatrix(psi)
     return psi, rho_psi
 
 
@@ -127,14 +128,14 @@ def calculate_premetric(u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCircuit
         tuple: including binded qc, rho, sigma
     """
     if (len(u.parameters)) > 0:
-        qc = u.bind_parameters(thetas)
-        rho = qiskit.quantum_info.DensityMatrix.from_instruction(qc)
-        sigma = qiskit.quantum_info.DensityMatrix.from_instruction(
-            vdagger.inverse())
+        qc = u.assign_parameters(thetas)
+        rho = qi.DensityMatrix(qc)
+        sigma = qi.DensityMatrix(vdagger.inverse())
+        
     else:
-        qc = vdagger.bind_parameters(thetas).inverse()
-        rho = qiskit.quantum_info.DensityMatrix.from_instruction(u)
-        sigma = qiskit.quantum_info.DensityMatrix.from_instruction(qc)
+        qc = vdagger.assign_parameters(thetas).inverse()
+        rho = qi.DensityMatrix(u)
+        sigma = qi.DensityMatrix(qc)
     return qc, rho, sigma
 
 
@@ -154,8 +155,8 @@ def calculate_gibbs_metrics(u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCir
     gibbs_fidelities = []
     for thetas in thetass:
         _, rho, sigma = calculate_premetric(u, vdagger, thetas)
-        gibbs_rho = qiskit.quantum_info.partial_trace(rho, [0, 1])
-        gibbs_sigma = qiskit.quantum_info.partial_trace(sigma, [0, 1])
+        gibbs_rho = qi.partial_trace(rho, [0, 1])
+        gibbs_sigma = qi.partial_trace(sigma, [0, 1])
         gibbs_trace = gibbs_trace_distance(gibbs_rho)
         gibbs_fidelity = gibbs_trace_fidelity(gibbs_rho, gibbs_sigma)
         gibbs_traces.append(gibbs_trace)

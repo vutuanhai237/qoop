@@ -2,6 +2,8 @@ import qiskit
 import numpy as np
 import typing
 import types
+from scipy.linalg import expm
+from qiskit.extensions import UnitaryGate
 """
 Function to load classical data in a quantum device
 This code is copy from https://github.com/adjs/dcsp/blob/master/encoding.py
@@ -206,7 +208,7 @@ def ghz(num_qubits, theta: float = np.pi / 2) -> qiskit.QuantumCircuit:
     """
     if isinstance(theta, float) != True:
         theta = (theta['theta'])
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     qc.ry(theta, 0)
     for i in range(0, qc.num_qubits - 1):
         qc.cnot(0, i + 1)
@@ -225,7 +227,7 @@ def ghz_inverse(num_qubits: int, theta: float = np.pi / 2) -> qiskit.QuantumCirc
     """
     if isinstance(theta, float) != True:
         theta = (theta['theta'])
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     for i in range(0, num_qubits - 1):
         qc.cnot(0, num_qubits - i - 1)
     qc.ry(-theta, 0)
@@ -241,7 +243,7 @@ def create_specific_state(num_qubits: int, state) -> qiskit.QuantumCircuit:
     Returns:
         qiskit.QuantumCircuit
     """
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     state = state / np.linalg.norm(state)
     qc.prepare_state(state, list(range(0, num_qubits)))
     return qc
@@ -258,7 +260,7 @@ def haar(num_qubits: int) -> qiskit.QuantumCircuit:
     """
     psi = 2*np.random.rand(2**num_qubits)-1
     psi = psi / np.linalg.norm(psi)
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     qc.prepare_state(psi, list(range(0, num_qubits)))
     return qc
 
@@ -288,7 +290,7 @@ def w(num_qubits: int) -> qiskit.QuantumCircuit:
     Returns:
         - qiskit.QuantumCircuit
     """
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     qc.x(0)
     qc = w_sub(qc, qc.num_qubits)
     return qc
@@ -350,7 +352,7 @@ def ame(num_qubits: int) -> qiskit.QuantumCircuit:
             0,])
     amplitude_state = amplitude_state / \
         np.sqrt(sum(np.absolute(amplitude_state) ** 2))
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     qc.prepare_state(amplitude_state, list(range(0, num_qubits)))
     return qc
 
@@ -373,7 +375,7 @@ def ame_fake(num_qubits: int) -> qiskit.QuantumCircuit:
         0,
         0,
         np.sqrt(1-0.27**2-0.363**2-0.326**2-0.377**2)])
-    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    qc = qiskit.QuantumCircuit(num_qubits)
     qc.prepare_state(amplitude_state, [0, 1, 2])
     return qc
 
@@ -453,7 +455,73 @@ def tfd(num_qubits: int, beta: int) -> qiskit.QuantumCircuit:
             float((partition[0][i]/partition[1]).real))*(np.kron(eigen[1][i], time_rev))
         vec = np.add(vec, addition)
 
-    qc = qiskit.QuantumCircuit(4, 4)
+    qc = qiskit.QuantumCircuit(4)
     amplitude_state = vec/np.sqrt(sum(np.absolute(vec) ** 2))
     qc.prepare_state(amplitude_state, list(range(0, num_qubits**2)))
+    return qc
+
+def time_dependent_qc(num_qubits: int,h_opt, t):
+    """create U circuit from h_opt and time t
+    
+    Args:
+        - qc (QuantumCircuit): Init circuit
+        - h_opt: Hamiltonian
+        - t (float): time
+        
+    Returns:
+        - QuantumCircuit: the added circuit
+    """
+    #Create circuit
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    
+    # Ensure h_opt is Hermitian
+    if not np.allclose(h_opt.to_matrix(), np.conj(h_opt.to_matrix()).T):
+        raise ValueError("The Hamiltonian is not Hermitian.")
+
+    # Calculate the unitary matrix
+    U = expm(-1j * t * h_opt.to_matrix())
+
+    # Check if U is unitary
+    if not np.allclose(U @ U.conj().T, np.eye(U.shape[0])):
+        raise ValueError("The resulting matrix U is not unitary.")
+
+    # Create a UnitaryGate from the unitary_matrix
+    unitary_gate = UnitaryGate(U)
+
+    # Append the unitary_gate to the quantum circuit
+    qc.append(unitary_gate, range(qc.num_qubits))
+
+    return qc
+
+def time_dependent_qc_inverse(num_qubits: int,h_opt, t):
+    """create U circuit from h_opt and time t
+    
+    Args:
+        - qc (QuantumCircuit): Init circuit
+        - h_opt: Hamiltonian
+        - t (float): time
+        
+    Returns:
+        - QuantumCircuit: the added circuit
+    """
+    #Create circuit
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    
+    # Ensure h_opt is Hermitian
+    if not np.allclose(h_opt.to_matrix(), np.conj(h_opt.to_matrix()).T):
+        raise ValueError("The Hamiltonian is not Hermitian.")
+
+    # Calculate the unitary matrix
+    U = expm(1j * t * h_opt.to_matrix())
+
+    # Check if U is unitary
+    if not np.allclose(U @ U.conj().T, np.eye(U.shape[0])):
+        raise ValueError("The resulting matrix U is not unitary.")
+
+    # Create a UnitaryGate from the unitary_matrix
+    unitary_gate = UnitaryGate(U)
+
+    # Append the unitary_gate to the quantum circuit
+    qc.append(unitary_gate, range(qc.num_qubits))
+
     return qc

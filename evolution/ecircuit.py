@@ -12,11 +12,15 @@ class ECircuit():
         self.qc = qc
         self.fitness_func = fitness_func
         self.fitness = 0
+        self.true_fitness = 0
         self.strength_point = 0
-        self.compile()
+        self.mode = mode
         return
     def compile(self):
         """Run fitness function to compute fitness value
         """
         self.fitness = self.fitness_func(self.qc)
+        return
+    def true_compile(self):
+        self.true_fitness = self.fitness_func(self.qc, num_steps = 100)
         return

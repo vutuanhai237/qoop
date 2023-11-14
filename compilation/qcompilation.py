@@ -205,20 +205,17 @@ class QuantumCompilation():
 
             elif 'qng' in optimizer_name:
                 grad_psi1 = measure.grad_psi(uvaddager, self.thetas,
-                                             r=1 / 2,
-                                             s=np.pi)
-                qc_binded = uvaddager.bind_parameters(self.thetas)
-                psi = qiskit.quantum_info.Statevector.from_instruction(
-                    qc_binded).data
+                                            r=1 / 2,
+                                            s=np.pi)
+                qc_binded = uvaddager.assign_parameters(self.thetas)
+                psi = qiskit.quantum_info.Statevector.from_instruction(qc_binded).data
                 psi = np.expand_dims(psi, 1)
                 if optimizer_name == 'qng_fubini_study':
                     G = gradient.qng(uvaddager)
-                    self.thetas = optimizer.qng_fubini_study(
-                        thetas, G, grad_loss)
+                    self.thetas = optimizer.qng_fubini_study(thetas, G, grad_loss)
                 if optimizer_name == 'qng_fubini_hessian':
                     G = gradient.qng_hessian(uvaddager)
-                    self.thetas = optimizer.qng_fubini_study(
-                        self.thetas, G, grad_loss)
+                    self.thetas = optimizer.qng_fubini_study(self.thetas, G, grad_loss)
                 if optimizer_name == 'qng_fubini_study_scheduler':
                     G = gradient.qng(uvaddager)
                     self.thetas = optimizer.qng_fubini_study_scheduler(
@@ -236,10 +233,9 @@ class QuantumCompilation():
                         self.thetas, m, v1, i, psi, grad_psi1, grad_loss)
             else:
                 thetas = self.optimizer(self.thetas, grad_loss)
-
-            qc_binded = uvaddager.bind_parameters(self.thetas)
+            
             loss = self.loss_func(
-                measure.measure(qc_binded, list(range(self.u.num_qubits))))
+                measure.measure(uvaddager.copy(), self.thetas))
             self.loss_values.append(loss)
             self.thetass.append(self.thetas.copy())
             if verbose == 1:
@@ -252,11 +248,9 @@ class QuantumCompilation():
 
         metric_params = [self.u, self.vdagger, self.thetass]
         if 'compilation' in metrics:
-            self.compilation_traces, self.compilation_fidelities = metric.calculate_compilation_metrics(
-                *metric_params)
+            self.compilation_traces, self.compilation_fidelities = metric.calculate_compilation_metrics(*metric_params)
         if 'gibbs' in metrics:
-            self.gibbs_traces, self.gibbs_fidelities = metric.calculate_gibbs_metrics(
-                *metric_params)
+            self.gibbs_traces, self.gibbs_fidelities = metric.calculate_gibbs_metrics(*metric_params)
         if 'ce' in metrics:
             self.ces = metric.calculate_ce_metrics(*metric_params)
         return
@@ -267,16 +261,13 @@ class QuantumCompilation():
         Args:
             metrics (typing.List[str]): can be loss, compilation, gibbs or ce
         """
-        if 'loss' in metrics:
-            plt.plot(self.loss_values, label='Loss value')
         if 'compilation' in metrics:
-            plt.plot(self.compilation_traces, label='Trace distance')
-            plt.plot(self.compilation_fidelities, label='Trace fidelity')
+            plt.plot(self.compilation_fidelities, label = 'Compilation fidelity')
+            plt.plot(self.compilation_traces, label = 'Compilation trace')
         if 'gibbs' in metrics:
-            plt.plot(self.gibbs_traces, label='Gibbs trace')
-            plt.plot(self.gibbs_fidelities, label='Gibbs fidelity')
-        if 'ce' in metrics:
-            plt.plot(self.ces, label='CE')
+            plt.plot(self.gibbs_fidelities, label = 'Gibbs fidelity')
+            plt.plot(self.gibbs_traces, label = 'Gibbs trace')
+        plt.plot(self.loss_values, label = 'Loss value')
         plt.ylabel("Value")
         plt.xlabel('Num. iteration')
         plt.legend()
