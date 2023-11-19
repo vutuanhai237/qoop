@@ -20,7 +20,7 @@ class QuantumStateTomography:
         file.close()
         return
 
-    def __init__(self, u: typing.Union[qiskit.QuantumCircuit, str], 
+    def __init__(self, u: qiskit.QuantumCircuit | str, 
                  vdagger: qiskit.QuantumCircuit = None, 
                  thetas: np.ndarray = None, 
                  ansatz: types.FunctionType = None):
@@ -74,7 +74,7 @@ class QuantumStateTomography:
         return
 
     @staticmethod
-    def find_satisfying_qstobj(state: str, num_qubits: int, error_rate: float, database_path: str) -> typing.Union[None, QuantumStateTomography]:
+    def find_satisfying_qstobj(state: str, num_qubits: int, error_rate: float, database_path: str):
         """Find qstobj which satisfy all conditions
 
         Args:

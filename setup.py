@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
-    name='qexp',
-    url='https://github.com/qexp',
+    name='qsee',
+    url='https://github.com/qsee',
     author='Vu Tuan Hai',
     author_email='haivt@uit.edu.vn',
     # Needed to actually package something
