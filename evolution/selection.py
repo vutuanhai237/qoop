@@ -10,7 +10,8 @@ def elitist_selection(population, num_elitist = 0):
     if num_elitist == 0:
         num_elitist = int(num_population/2)
     population = sorted(population, key=lambda obj: obj.fitness)
-    return population
+    
+    return population[:num_elitist]
 
 def steady_state_selection(self, fitness, num_parents):
 

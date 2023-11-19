@@ -5,7 +5,7 @@ from .ecircuit import ECircuit
 from ..backend import utilities
 
 def onepoint_crossover(circuit1: ECircuit, circuit2: ECircuit, 
-                       percent: float = None, is_truncate=False) -> typing.Tuple:
+                       percent: float = 0.5, is_truncate=False) -> typing.Tuple:
     """Cross over between two circuits and create 2 offsprings
 
     Args:
@@ -17,11 +17,10 @@ def onepoint_crossover(circuit1: ECircuit, circuit2: ECircuit,
     # If percent is not produced, dividing base on how strong of father's fitness.
     standard_depth = circuit1.qc.depth()
     standard_fitness_func = circuit1.fitness_func
-    strength_point_circuit1 = int(standard_depth * percent)
     sub11, sub12 = utilities.divide_circuit_by_depth(
-        circuit1.qc, strength_point_circuit1)
+        circuit1.qc, int(standard_depth*percent))
     sub21, sub22 = utilities.divide_circuit_by_depth(
-        circuit2.qc, strength_point_circuit1)
+        circuit2.qc, int(standard_depth*percent))
     combined_qc1 = utilities.compose_circuit([sub11, sub22])
     combined_qc2 = utilities.compose_circuit([sub21, sub12])
     if is_truncate:

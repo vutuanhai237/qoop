@@ -29,7 +29,7 @@ class QuantumCompilation():
         self.gibbs = False
         return
 
-    def __init__(self, u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCircuit, optimizer: typing.Union[types.FunctionType, str], loss_func: typing.Union[types.FunctionType, str], thetas: np.ndarray = np.array([]), **kwargs):
+    def __init__(self, u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCircuit, optimizer: typing.Union[types.FunctionType, str] = 'adam', loss_func: typing.Union[types.FunctionType, str] = 'loss_fubini_study', thetas: np.ndarray = np.array([]), **kwargs):
         """_summary_
 
         Args:
