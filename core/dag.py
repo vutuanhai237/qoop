@@ -55,7 +55,7 @@ def circuit_to_adjacency_matrix(qc: qiskit.QuantumCircuit):
     for i in range(len(tinyDAG.nodes)):
         for node in tinyDAG.nodes[i].successor:
             distance_info = None
-            for d in qtm.constant.gate_distaces:
+            for d in qsee.constant.gate_distaces:
                 if d["name_gate1"] == tinyDAG.nodes[i].op_name and d["name_gate2"] == node.op_name:
                     distance_info = d
             adjacency_matrix[tinyDAG.nodes[i].index][node.index] = distance_info['distance']

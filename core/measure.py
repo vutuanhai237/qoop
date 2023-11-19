@@ -99,12 +99,12 @@ def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray, mode: str =
     # for i in range(0, n):
     #     qc.measure(qubits[i], cbits[i])
     # # qc.measure_all() # 
-    # if qtm.constant.NOISE_PROB > 0:
+    # if qsee.constant.NOISE_PROB > 0:
     #     noise_model = generate_noise_model(
-    #         n, qtm.constant.NOISE_PROB)
-    #     results = qiskit.execute(qc, backend=qtm.constant.backend,
+    #         n, qsee.constant.NOISE_PROB)
+    #     results = qiskit.execute(qc, backend=qsee.constant.backend,
     #                              noise_model=noise_model,
-    #                              shots=qtm.constant.NUM_SHOTS).result()
+    #                              shots=qsee.constant.NUM_SHOTS).result()
     #     # Raw counts
     #     counts = results.get_counts()
     #     # Mitigating noise based on https://qiskit.org/textbook/ch-quantum-hardware/measurement-error-mitigation.html
@@ -114,10 +114,10 @@ def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray, mode: str =
     #     counts = meas_filter.apply(counts.copy())
     # else:
     #     counts = qiskit.execute(
-    #         qc, backend=qtm.constant.backend #,shots=qtm.constant.NUM_SHOTS
+    #         qc, backend=qsee.constant.backend #,shots=qsee.constant.NUM_SHOTS
     #     ).result().get_counts()
 
-    # return counts.get("0" * len(qubits), 0) / qtm.constant.NUM_SHOTS
+    # return counts.get("0" * len(qubits), 0) / qsee.constant.NUM_SHOTS
 
 
 

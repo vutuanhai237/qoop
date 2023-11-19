@@ -43,7 +43,7 @@ class EEnvironment():
             data.pool, data.file_name)
         file.close()
         return
-    def __init__(self, params: typing.Union[typing.Dict, str],
+    def __init__(self, params: typing.Dict | str,
                  fitness_func: types.FunctionType = None,
                  crossover_func: types.FunctionType = None,
                  mutate_func: types.FunctionType = None,
@@ -191,7 +191,7 @@ class EEnvironment():
         self.population = []
         num_sastify_circuit = 0
         while(num_sastify_circuit <= self.num_circuit):
-            random_circuit = qtm.random_circuit.generate_with_pool(
+            random_circuit = qsee.random_circuit.generate_with_pool(
                 self.num_qubits, self.depth, self.pool)
             if sastify_circuit(random_circuit):
                 num_sastify_circuit += 1

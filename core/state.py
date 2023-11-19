@@ -234,7 +234,7 @@ def ghz_inverse(num_qubits: int, theta: float = np.pi / 2) -> qiskit.QuantumCirc
     return qc
 
 
-def create_specific_state(num_qubits: int, state) -> qiskit.QuantumCircuit:
+def specific(state: np.ndarray) -> qiskit.QuantumCircuit:
     """Create a random Haar quantum state
 
     Args:
@@ -243,6 +243,7 @@ def create_specific_state(num_qubits: int, state) -> qiskit.QuantumCircuit:
     Returns:
         qiskit.QuantumCircuit
     """
+    num_qubits = int(np.log2(state.shape[0]))
     qc = qiskit.QuantumCircuit(num_qubits)
     state = state / np.linalg.norm(state)
     qc.prepare_state(state, list(range(0, num_qubits)))
@@ -350,11 +351,7 @@ def ame(num_qubits: int) -> qiskit.QuantumCircuit:
             0,
             0,
             0,])
-    amplitude_state = amplitude_state / \
-        np.sqrt(sum(np.absolute(amplitude_state) ** 2))
-    qc = qiskit.QuantumCircuit(num_qubits)
-    qc.prepare_state(amplitude_state, list(range(0, num_qubits)))
-    return qc
+    return specific(amplitude_state)
 
 
 def ame_fake(num_qubits: int) -> qiskit.QuantumCircuit:
@@ -376,8 +373,7 @@ def ame_fake(num_qubits: int) -> qiskit.QuantumCircuit:
         0,
         np.sqrt(1-0.27**2-0.363**2-0.326**2-0.377**2)])
     qc = qiskit.QuantumCircuit(num_qubits)
-    qc.prepare_state(amplitude_state, [0, 1, 2])
-    return qc
+    return specific(amplitude_state)
 
 
 def calculate_hamiltonian(num_qubits: int) -> qiskit.QuantumCircuit:
@@ -454,11 +450,8 @@ def tfd(num_qubits: int, beta: int) -> qiskit.QuantumCircuit:
         addition = (
             float((partition[0][i]/partition[1]).real))*(np.kron(eigen[1][i], time_rev))
         vec = np.add(vec, addition)
-
-    qc = qiskit.QuantumCircuit(4)
     amplitude_state = vec/np.sqrt(sum(np.absolute(vec) ** 2))
-    qc.prepare_state(amplitude_state, list(range(0, num_qubits**2)))
-    return qc
+    return specific(amplitude_state)
 
 def time_dependent_qc(num_qubits: int,h_opt, t):
     """create U circuit from h_opt and time t

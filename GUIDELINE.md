@@ -7,9 +7,9 @@ So we will do experiment with various $U$, $V^{\dagger}$ and optimize strategy.
 Some notation for hyperparameter:
 
 (important)
-- Ansatz: $U$ (defined in `qtm.ansatz`)
+- Ansatz: $U$ (defined in `qsee.ansatz`)
 - Optimize circuit: $u$ (ansatz when repeat $L$ times)
-- State: $V^{\dagger}$ (defined in `qtm.state`)
+- State: $V^{\dagger}$ (defined in `qsee.state`)
 - Number of qubit: $n$ (`num_qubits`)
 - Number of layer (for ansatz): $L$ (`num_layers`)
 - $\theta$: theta (if $\theta$ is scalar), thetas (if $\theta$ is 1-d numpy array) and thetass (if $\theta$ is 2-d numpy array).

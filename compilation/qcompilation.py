@@ -4,9 +4,9 @@ import numpy as np
 import typing
 import types
 import qiskit
-from ..core import gradient, optimizer, loss, metric, measure
+from ..core import gradient, optimizer, loss, metric, measure, ansatz, state
 from ..backend import utilities
-
+from .qsp import QuantumStatePreparation
 
 class QuantumCompilation():
     def __init__(self) -> None:
@@ -29,7 +29,7 @@ class QuantumCompilation():
         self.gibbs = False
         return
 
-    def __init__(self, u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCircuit, optimizer: typing.Union[types.FunctionType, str], loss_func: typing.Union[types.FunctionType, str], thetas: np.ndarray = np.array([]), **kwargs):
+    def __init__(self, u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCircuit, optimizer: typing.Union[types.FunctionType, str] = 'adam', loss_func: typing.Union[types.FunctionType, str] = 'loss_fubini_study', thetas: np.ndarray = np.array([]), **kwargs):
         """_summary_
 
         Args:
@@ -57,7 +57,13 @@ class QuantumCompilation():
         self.num_steps = 0
         self.gibbs = False
         return
-
+    
+    @staticmethod
+    def prepare(target_state: np.ndarray):
+        num_qubits = int(np.log2(target_state.shape[0]))
+        vdagger = state.specific(target_state).inverse()
+        compiler = QuantumCompilation(ansatz.g2gnw(num_qubits, 2), vdagger)
+        return compiler
     def set_u(self, _u: qiskit.QuantumCircuit) -> None:
         """In quantum state preparation problem, this is the ansatz. In tomography, this is the circuit that generate random Haar state.
 
@@ -254,7 +260,7 @@ class QuantumCompilation():
             self.ces = metric.calculate_ce_metrics(*metric_params)
         return
 
-    def plot(self, metrics: typing.List[str]) -> None:
+    def plot(self, metrics: typing.List[str] = ['compilation']) -> None:
         """Plot coressponding metrics.
 
         Args:
@@ -313,14 +319,13 @@ class QuantumCompilation():
                                            interval=interval, repeat=False)
         animator.save(file_name)
 
-    def save(self, ansatz, state, file_name):
-        # if (len(self.u.parameters)) > 0:
-        #     qspobj = QuantumStatePreparation(
-        #         self.u,
-        #         self.vdagger,
-        #         self.thetas,
-        #         ansatz)
-        #     qspobj.save(state, file_name)
+    def save(self, file_name):
+        if (len(self.u.parameters)) > 0:
+            qspobj = QuantumStatePreparation(
+                self.u,
+                self.vdagger,
+                self.thetas)
+            qspobj.save(file_name)
         # else:
         #     qstobj = QuantumStateTomography(
         #         self.u,
