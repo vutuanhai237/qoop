@@ -475,3 +475,13 @@ def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return array[idx]
+
+def append_to_dict(tup, new_items):
+    for key, value in new_items.items():
+        # Check if the key already exists in the dictionary
+        if key in tup:
+            # If the key exists, append the value to its list
+            tup[key].append(value)
+        else:
+            # If the key doesn't exist, create a new key-value pair with the key and a list containing the value
+            tup[key] = [value]

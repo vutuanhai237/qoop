@@ -4,9 +4,8 @@ import numpy as np
 import typing
 import types
 import qiskit
-from ..core import gradient, optimizer, loss, metric, measure, ansatz, state
+from ..core import gradient, optimizer, metric, measure, ansatz, state
 from ..backend import utilities
-from .qsp import QuantumStatePreparation
 
 class QuantumCompilation():
     def __init__(self) -> None:
@@ -17,45 +16,42 @@ class QuantumCompilation():
         self.loss_func = None
         self.thetas = None
         self.thetass = []
-        self.loss_values = []
-        self.compilation_fidelities = []
-        self.compilation_traces = []
-        self.gibbs_fidelities = []
-        self.gibbs_traces = []
-        self.ces = None
+        self.metrics = {}
+        self.metrics_func = {}
         self.kwargs = None
         self.is_evolutional = False
         self.num_steps = 0
-        self.gibbs = False
         return
 
-    def __init__(self, u: qiskit.QuantumCircuit, vdagger: qiskit.QuantumCircuit, optimizer: typing.Union[types.FunctionType, str] = 'adam', loss_func: typing.Union[types.FunctionType, str] = 'loss_fubini_study', thetas: np.ndarray = np.array([]), **kwargs):
+    def __init__(self, 
+                u: qiskit.QuantumCircuit, 
+                vdagger: qiskit.QuantumCircuit | np.ndarray, 
+                optimizer: typing.Union[types.FunctionType, str] = 'adam', 
+                metrics_func: typing.List[types.FunctionType] | typing.List[str] = ['loss_fubini_study', 'compilation_trace_distances', 'compilation_trace_fidelities'], 
+                thetas: np.ndarray = np.array([]), **kwargs):
         """_summary_
 
         Args:
             - u (qiskit.QuantumCircuit]): In quantum state preparation problem, this is the ansatz. In tomography, this is the circuit that generate random Haar state.
             - vdagger (qiskit.QuantumCircuit]): In quantum tomography problem, this is the ansatz. In state preparation, this is the circuit that generate random Haar state.
             - optimizer (typing.Union[types.FunctionType, str]): You can put either string or function here. If type string, qcompilation produces some famous optimizers such as: 'sgd', 'adam', 'qng-fubini-study', 'qng-qfim', 'qng-adam'.
-            - loss_func (typing.Union[types.FunctionType, str]): You can put either string or function here. If type string, qcompilation produces some famous optimizers such as: 'loss_basic'  (1 - p0) and 'loss_fubini_study' (\sqrt{(1 - p0)}).
+            - metrics_func (typing.Union[types.FunctionType, str]): You can put either string or function here. If type string, qcompilation produces some famous optimizers such as: 'loss_basic'  (1 - p0) and 'loss_fubini_study' (\sqrt{(1 - p0)}).
             - thetas (np.ndarray, optional): initial parameters. Note that it must fit with your ansatz. Defaults to np.array([]).
         """
-        self.set_u(u)
-        self.set_vdagger(vdagger)
-        self.set_optimizer(optimizer)
-        self.set_loss_func(loss_func)
-        self.set_kwargs(**kwargs)
-        self.set_thetas(thetas)
         self.thetass = []
-        self.loss_values = []
-        self.compilation_fidelities = []
-        self.compilation_traces = []
-        self.gibbs_fidelities = []
-        self.gibbs_traces = []
-        self.ces = None
+        self.metrics = {}
+        self.metrics_func = {}
         self.kwargs = None
         self.is_evolutional = False
         self.num_steps = 0
-        self.gibbs = False
+        self.set_u(u)
+        if isinstance(vdagger, np.ndarray):
+            vdagger = state.specific(vdagger).inverse()
+        self.set_vdagger(vdagger)
+        self.set_optimizer(optimizer)
+        self.set_metrics_func(metrics_func)
+        self.set_kwargs(**kwargs)
+        self.set_thetas(thetas)
         return
     
     @staticmethod
@@ -89,25 +85,23 @@ class QuantumCompilation():
                 'The V dagger part must be a determined quantum circuit')
         return
 
-    def set_loss_func(self, _loss_func: typing.Union[types.FunctionType, str]) -> None:
-        """Set the loss function for compiler
+    def set_metrics_func(self, _metrics_func: typing.List[types.FunctionType] | typing.List[str]) -> None:
+        """Set the metric function for compiler
 
         Args:
-            - _loss_func (typing.Union[types.FunctionType, str])
+            - _metrics_func (typing.List[types.FunctionType] | typing.List[str])
 
         Raises:
             ValueError: when you pass wrong type
         """
-        if callable(_loss_func):
-            self.loss_func = _loss_func
-        elif isinstance(_loss_func, str):
-            if _loss_func == 'loss_basic':
-                self.loss_func = loss.loss_basis
-            elif _loss_func == 'loss_fubini_study':
-                self.loss_func = loss.loss_fubini_study
-        else:
-            raise ValueError(
-                'The loss function must be a function f: measurement value -> loss value or string in ["loss_basic", "loss_fubini_study"]')
+        for _metric_func in _metrics_func:
+            if callable(_metric_func):
+                self.metrics_func[_metric_func.__name__] = _metric_func
+            elif isinstance(_metric_func, str):
+                self.metrics_func[_metric_func] = getattr(metric, _metric_func)
+            else:
+                raise ValueError(
+                    'The metric function must be a function f: u, vdagger, thetas -> metric value or string in qsee.core.metric or self-define')
         return
 
     def set_optimizer(self, _optimizer: typing.Union[types.FunctionType, str]) -> None:
@@ -122,23 +116,10 @@ class QuantumCompilation():
         if callable(_optimizer):
             self.optimizer = _optimizer
         elif isinstance(_optimizer, str):
-            if _optimizer == 'sgd':
-                self.optimizer = optimizer.sgd
-            elif _optimizer == 'adam':
-                self.optimizer = optimizer.adam
-            elif _optimizer == 'qng_fubini_study':
-                self.optimizer = optimizer.qng_fubini_study
-            elif _optimizer == 'qng_fubini_study_hessian':
-                self.optimizer = optimizer.qng_fubini_study_hessian
-            elif _optimizer == 'qng_fubini_study_scheduler':
-                self.optimizer = optimizer.qng_fubini_study_scheduler
-            elif _optimizer == 'qng_qfim':
-                self.optimizer = optimizer.qng_qfim
-            elif _optimizer == 'qng_adam':
-                self.optimizer = optimizer.qng_adam
+            self.optimizer = getattr(optimizer, _optimizer)
         else:
             raise ValueError(
-                'The optimizer must be a function f: thetas -> thetas or string in ["sgd", "adam", "qng_qfim", "qng_fubini_study", "qng_adam"]')
+                'The optimizer must be a function f: thetas -> thetas or string in qsee.core.optimizer or self-define')
         return
 
     def set_num_steps(self, _num_steps: int) -> None:
@@ -176,7 +157,7 @@ class QuantumCompilation():
         self.kwargs = kwargs
         return
 
-    def fit(self, num_steps: int = 100, metrics: typing.List[str] = 'compilation', verbose: int = 0) -> None:
+    def fit(self, num_steps: int = 100, metrics_name: typing.List[str] = 'compilation', verbose: int = 0) -> None:
         """Optimize the thetas parameters
 
         Args:
@@ -198,81 +179,64 @@ class QuantumCompilation():
         for i in range(0, num_steps):
             grad_loss = gradient.grad_loss(uvaddager, self.thetas)
             optimizer_name = self.optimizer.__name__
-
             if optimizer_name == 'sgd':
-                self.thetas = optimizer.sgd(self.thetas, grad_loss)
-
+                optimizer_params = [grad_loss]
             elif optimizer_name == 'adam':
                 if i == 0:
                     m, v1 = list(np.zeros(self.thetas.shape[0])), list(
                         np.zeros(self.thetas.shape[0]))
-                self.thetas = optimizer.adam(self.thetas, m, v1, i, grad_loss)
+                optimizer_params = [m, v1, i, grad_loss]
 
             elif 'qng' in optimizer_name:
-                grad_psi1 = measure.grad_psi(uvaddager, self.thetas,
+                grad_psi1 = gradient.grad_psi(uvaddager, self.thetas,
                                             r=1 / 2,
                                             s=np.pi)
                 qc_binded = uvaddager.assign_parameters(self.thetas)
                 psi = qiskit.quantum_info.Statevector.from_instruction(qc_binded).data
                 psi = np.expand_dims(psi, 1)
                 if optimizer_name == 'qng_fubini_study':
-                    G = gradient.qng(uvaddager)
-                    self.thetas = optimizer.qng_fubini_study(thetas, G, grad_loss)
+                    G = gradient.qng(qc_binded)
+                    optimizer_params = [G, grad_loss]
                 if optimizer_name == 'qng_fubini_hessian':
                     G = gradient.qng_hessian(uvaddager)
-                    self.thetas = optimizer.qng_fubini_study(self.thetas, G, grad_loss)
+                    optimizer_params = [G, grad_loss]
                 if optimizer_name == 'qng_fubini_study_scheduler':
                     G = gradient.qng(uvaddager)
-                    self.thetas = optimizer.qng_fubini_study_scheduler(
-                        self.thetas, G, grad_loss, i)
+                    optimizer_params = [G, grad_loss, i]
                 if optimizer_name == 'qng_qfim':
-
-                    self.thetas = optimizer.qng_qfim(
-                        self.thetas, psi, grad_psi1, grad_loss)
-
+                    optimizer_params = [psi, grad_psi1, grad_loss]
                 if optimizer_name == 'qng_adam':
                     if i == 0:
-                        m, v1 = list(np.zeros(thetas.shape[0])), list(
-                            np.zeros(thetas.shape[0]))
-                    self.thetas = optimizer.qng_adam(
-                        self.thetas, m, v1, i, psi, grad_psi1, grad_loss)
-            else:
-                thetas = self.optimizer(self.thetas, grad_loss)
+                        m, v1 = list(np.zeros(self.thetas.shape[0])), list(
+                            np.zeros(self.thetas.shape[0]))
+                    optimizer_params = [m, v1, i, psi, grad_psi1, grad_loss]
             
-            loss = self.loss_func(
-                measure.measure(uvaddager.copy(), self.thetas))
-            self.loss_values.append(loss)
+            self.thetas = self.optimizer(self.thetas, *optimizer_params)
             self.thetass.append(self.thetas.copy())
             if verbose == 1:
                 bar.update(1)
             if verbose == 2 and i % 10 == 0:
-                print("Step " + str(i) + ": " + str(loss))
+                print(f"Step {i} ...")
 
         if verbose == 1:
             bar.close()
-
-        metric_params = [self.u, self.vdagger, self.thetass]
-        if 'compilation' in metrics:
-            self.compilation_traces, self.compilation_fidelities = metric.calculate_compilation_metrics(*metric_params)
-        if 'gibbs' in metrics:
-            self.gibbs_traces, self.gibbs_fidelities = metric.calculate_gibbs_metrics(*metric_params)
-        if 'ce' in metrics:
-            self.ces = metric.calculate_ce_metrics(*metric_params)
+        self.calculate_metrics()
         return
 
-    def plot(self, metrics: typing.List[str] = ['compilation']) -> None:
+    def calculate_metrics(self) -> None:
+        for metric in self.metrics_func:
+            metric_params = [self.u, self.vdagger, self.thetass]
+            metric_func: types.FunctionType = self.metrics_func[metric]
+            self.metrics[metric] = metric_func(*metric_params)
+        return
+    def plot(self) -> None:
         """Plot coressponding metrics.
 
         Args:
             metrics (typing.List[str]): can be loss, compilation, gibbs or ce
         """
-        if 'compilation' in metrics:
-            plt.plot(self.compilation_fidelities, label = 'Compilation fidelity')
-            plt.plot(self.compilation_traces, label = 'Compilation trace')
-        if 'gibbs' in metrics:
-            plt.plot(self.gibbs_fidelities, label = 'Gibbs fidelity')
-            plt.plot(self.gibbs_traces, label = 'Gibbs trace')
-        plt.plot(self.loss_values, label = 'Loss value')
+        for metric in self.metrics:
+            plt.plot(self.metrics[metric], label = metric)
         plt.ylabel("Value")
         plt.xlabel('Num. iteration')
         plt.legend()
@@ -319,21 +283,6 @@ class QuantumCompilation():
                                            interval=interval, repeat=False)
         animator.save(file_name)
 
-    def save(self, file_name):
-        if (len(self.u.parameters)) > 0:
-            qspobj = QuantumStatePreparation(
-                self.u,
-                self.vdagger,
-                self.thetas)
-            qspobj.save(file_name)
-        # else:
-        #     qstobj = QuantumStateTomography(
-        #         self.u,
-        #         self.vdagger,
-        #         self.thetas,
-        #         ansatz)
-        #     qstobj.save(state, file_name)
-        return
 
     def reset(self):
         """Delete all current property of compiler
@@ -346,5 +295,6 @@ class QuantumCompilation():
         self.num_steps = 0
         self.thetas = None
         self.thetass = []
-        self.loss_values = []
+        self.metrics = {}
+        self.metrics_func = {}
         return

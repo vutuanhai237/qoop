@@ -3,7 +3,7 @@ import math
 import random
 import numpy as np
 from ..backend import constant, utilities
-
+from qiskit.circuit import ParameterVector
 
 def graph(num_qubits: int) -> qiskit.QuantumCircuit:
     """Create parameterized graph ansatz
@@ -16,7 +16,7 @@ def graph(num_qubits: int) -> qiskit.QuantumCircuit:
     """
     qc = qiskit.QuantumCircuit(num_qubits)
     edges = constant.edges_graph_state[num_qubits]
-    thetas = qiskit.circuit.ParameterVector('theta', len(edges))
+    thetas = ParameterVector('theta', len(edges))
     i = 0
     for edge in edges:
         control_bit = int(edge.split('-')[0])
@@ -36,7 +36,7 @@ def stargraph(num_qubits: int, num_layers: int = 1) -> qiskit.QuantumCircuit:
     Returns:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
-    thetas = qiskit.circuit.ParameterVector(
+    thetas = ParameterVector(
         'theta', num_layers * (2 * num_qubits - 2))
     qc = qiskit.QuantumCircuit(num_qubits)
     j = 0
@@ -63,7 +63,7 @@ def polygongraph(num_qubits: int = 3, num_layers: int = 1) -> qiskit.QuantumCirc
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', 2*num_qubits*num_layers)
+    thetas = ParameterVector('theta', 2*num_qubits*num_layers)
     j = 0
     for _ in range(0, num_layers, 1):
         for i in range(0, num_qubits):
@@ -100,7 +100,7 @@ def hadamard_hypergraph(num_qubits: int, num_layers: int = 1) -> qiskit.QuantumC
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', 3*num_qubits*num_layers)
+    thetas = ParameterVector('theta', 3*num_qubits*num_layers)
     j = 0
     for i in range(0, num_qubits):
         qc.h(i)
@@ -136,7 +136,7 @@ def hypergraph(num_qubits: int, num_layers: int = 1) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', 3*num_qubits*num_layers)
+    thetas = ParameterVector('theta', 3*num_qubits*num_layers)
     j = 0
     for _ in range(0, num_layers, 1):
         for i in range(0, num_qubits):
@@ -203,7 +203,7 @@ def cry_layer(num_qubits: int) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', num_qubits)
+    thetas = ParameterVector('theta', num_qubits)
     for i in range(0, qc.num_qubits - 1, 2):
         qc.cry(thetas[i], i, i + 1)
     for i in range(1, qc.num_qubits - 1, 2):
@@ -243,7 +243,7 @@ def ry_layer(num_qubits: int = 3, shift=0) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', num_qubits - shift)
+    thetas = ParameterVector('theta', num_qubits - shift)
     for i in range(0, num_qubits):
         qc.ry(thetas[i], i + shift)
     return qc
@@ -305,7 +305,7 @@ def Wchain(num_qubits: int) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', num_qubits)
+    thetas = ParameterVector('theta', num_qubits)
     for i in range(0, num_qubits - 1):
         qc.cry(thetas[i], i, i + 1)
     qc.cry(thetas[-1], num_qubits - 1, 0)
@@ -339,8 +339,9 @@ def Walternating(num_qubits: int, index_layer: int) -> qiskit.QuantumCircuit:
         return n_walternating
 
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector(
+    thetas = ParameterVector(
         'theta', calculate_n_walternating(num_qubits, index_layer))
+    t = 0
     if index_layer % 2 == 0:
         # Even
         for i in range(1, qc.num_qubits - 1, 2):
@@ -379,7 +380,7 @@ def Walltoall(num_qubits: int, limit: int=0) -> qiskit.QuantumCircuit:
         return n_walltoall
 
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector(
+    thetas = ParameterVector(
         'theta', calculate_n_walltoall(num_qubits))
     if limit == 0:
         limit = len(thetas)
@@ -457,7 +458,7 @@ def Walltoall_zxz(num_qubits: int, num_layers: int = 1, limit=0) -> qiskit.Quant
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
     for _ in range(0, num_layers):
         qc = utilities.compose_circuit(
-            [qc, Walltoall(qc, limit=limit), zxz_layer(num_qubits)])
+            [qc, Walltoall(num_qubits, limit=limit), zxz_layer(num_qubits)])
     return qc
 
 
@@ -531,7 +532,7 @@ def rz_layer(num_qubits: int) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', num_qubits)
+    thetas = ParameterVector('theta', num_qubits)
     for i in range(num_qubits):
         qc.rz(thetas[i], i)
     return qc
@@ -547,7 +548,7 @@ def rx_layer(num_qubits: int) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', num_qubits)
+    thetas = ParameterVector('theta', num_qubits)
     for i in range(num_qubits):
         qc.rx(thetas[i], i)
     return qc
@@ -563,7 +564,7 @@ def ry_layer(num_qubits: int) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector('theta', num_qubits)
+    thetas = ParameterVector('theta', num_qubits)
     for i in range(num_qubits):
         qc.ry(thetas[i], i)
     return qc
@@ -592,7 +593,7 @@ def g2(num_qubits: int, num_layers: int) -> qiskit.QuantumCircuit:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
-    thetas = qiskit.circuit.ParameterVector(
+    thetas = ParameterVector(
         'theta', 2 * num_qubits * num_layers)
     j = 0
     for _ in range(num_layers):

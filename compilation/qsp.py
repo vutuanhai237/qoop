@@ -1,13 +1,14 @@
-import qiskit, typing, types, pickle, os, json
+import qiskit, typing, types, os, json, pathlib
 import qiskit.quantum_info as qi
 import numpy as np
 from ..core import metric, ansatz, state
 from ..backend import utilities
+from .qcompilation import QuantumCompilation
 
 class QuantumStatePreparation:
     def __init__(self, u: qiskit.QuantumCircuit | str, 
                  target_state: qiskit.QuantumCircuit | np.ndarray, 
-                 thetas: np.ndarray = None):
+                 thetas: np.ndarray = np.array([])):
         """There are four key atttributes for QSP problem: u, vdagger, parameters of u and name of u.
 
         Args:
@@ -18,8 +19,12 @@ class QuantumStatePreparation:
         Returns:
             QuantumStatePreparation: completed object
         """
-        self.num_layers = None
-        self.thetas = thetas
+        self.num_layers: int = None
+        self.thetas: np.ndarray = thetas
+        self.trace: float = 0
+        self.fidelity: float = 0
+        self.qc: qiskit.QuantumCircuit = None
+        self.compiler: QuantumCompilation = None
         if isinstance(target_state, qiskit.QuantumCircuit):
             self.vdagger = target_state
         elif isinstance(target_state, np.ndarray):
@@ -33,14 +38,28 @@ class QuantumStatePreparation:
             self.u = u_ansatz(self.num_qubits, self.num_layers)
         else:
             self.u = u
-
-        traces, fidelities = metric.calculate_compilation_metrics(
-            self.u, self.vdagger, np.expand_dims(self.thetas, axis=0))
+        if len(self.thetas) > 0:
+            self.update_metric()
+        return
+    
+    def update_metric(self):
+        traces, fidelities = metric.compilation_metrics(
+                self.u, self.vdagger, np.expand_dims(self.thetas, axis=0))
         self.trace = traces[0]
         self.fidelity = fidelities[0]
         self.qc = self.u.bind_parameters(self.thetas)
+        return 
+    def fit(self, num_steps: int = 100, verbose: int = 0, **kwargs):
+        optimizer: str = kwargs.get('optimizer', 'adam')
+        metrics_func: str = kwargs.get('metrics_func', ['loss_fubini_study'])
+        thetas: np.ndarray = kwargs.get('thetas', np.array([]))
+        self.compiler = QuantumCompilation(
+            self.u, self.vdagger,
+            optimizer, metrics_func, thetas)
+        self.compiler.fit(num_steps = num_steps, verbose = verbose)
+        self.thetas = self.compiler.thetas
+        self.update_metric()
         return
-    
     def save(self, file_name: str):
         """Save QSP to .qspobj file with a given path
 
@@ -67,16 +86,15 @@ class QuantumStatePreparation:
         return
     @staticmethod
     def load(file_name: str = ''):
-        import pathlib
         file = pathlib.Path(file_name)
-        if file.is_dir:
+        if file.is_dir():
             qspjson = json.load(open(os.path.join(file_name, 'info.json')))
             qspobj = QuantumStatePreparation(
                 u = utilities.load_circuit(qspjson['u']), 
                 target_state= utilities.load_circuit(qspjson['vdagger']), 
                 thetas = qspjson['thetas']
             )
-        elif file.is_file:
+        elif file.is_file():
             qspjson = json.load(open(file_name))
             target_state = getattr(state, qspjson['vdagger'])(qspjson['num_qubits'])
             # Only inverse() for existing state include: GHZ, W, AME, TFD
@@ -93,9 +111,14 @@ class QuantumStatePreparation:
         else:
             raise TypeError("Please input target state name or an array")
     @staticmethod
-    def prepare_random(state: np.ndarray, error_rate: float, **kwargs):
-        
-        return
+    def prepare_random(state: np.ndarray, error_rate: float = 0.01, **kwargs):
+        compiler = QuantumCompilation.prepare(state)
+        compiler.fit()
+        if 1 - compiler.compilation_fidelities[-1] <= error_rate:
+            return compiler
+        else:
+            print('Default compiler is not sastify your error rate, please use other ansatz in QuantumCompilationObj')
+            return compiler
     @staticmethod
     def prepare_existed(state: str, error_rate: float, num_qubits: int):
         """Find qspobj which satisfy all conditions
@@ -116,7 +139,7 @@ class QuantumStatePreparation:
         files = [f for f in files if f.split('_')[0] == state and int(f.split('_')[2]) == num_qubits]
         for i in range(0, len(files)):
             path = database_path + files[i]
-            qspobj = QuantumStatePreparation.load_from_file(path)
+            qspobj = QuantumStatePreparation.load(path)
             if qspobj.fidelity > 1 - error_rate:
                 if best_qspobj is None:
                     best_qspobj = qspobj
