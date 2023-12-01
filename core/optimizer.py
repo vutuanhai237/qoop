@@ -82,7 +82,7 @@ def qng_fubini_study(
 
 
 def qng_fubini_study_scheduler(
-    thetas: np.ndarray, G: np.ndarray, grad_loss: np.ndarray, iter: int
+    thetas: np.ndarray, G: np.ndarray, iter: int, grad_loss: np.ndarray
 ) -> np.ndarray:
     """Type of QNG
 

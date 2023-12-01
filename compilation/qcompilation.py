@@ -4,10 +4,15 @@ import numpy as np
 import typing
 import types
 import qiskit
+import qiskit.quantum_info as qi
 from ..core import gradient, optimizer, metric, measure, ansatz, state
-from ..backend import utilities
+from ..backend import utilities, constant
 
 class QuantumCompilation():
+    """Read this paper to know compilation process: https://www.nature.com/articles/s41598-023-30983-4
+    QuantumStatePreparation (qsp) and QuantumStateTomography (qst) use this class is a core property.
+    In others words, we can see qst and qsp are inherit from QuantumCompilation.
+    """
     def __init__(self) -> None:
         self.u = None
         self.vdagger = None
@@ -26,10 +31,10 @@ class QuantumCompilation():
     def __init__(self, 
                 u: qiskit.QuantumCircuit, 
                 vdagger: qiskit.QuantumCircuit | np.ndarray, 
-                optimizer: typing.Union[types.FunctionType, str] = 'adam', 
-                metrics_func: typing.List[types.FunctionType] | typing.List[str] = ['loss_fubini_study', 'compilation_trace_distances', 'compilation_trace_fidelities'], 
+                optimizer: typing.Union[types.FunctionType, str] = constant.OptimizerName.ADAM.value, 
+                metrics_func: typing.List[types.FunctionType] | typing.List[str] = constant.DEFAULT_COMPILATION_METRICS, 
                 thetas: np.ndarray = np.array([]), **kwargs):
-        """_summary_
+        """Construct a compiler, two main parameters are u and vdagger
 
         Args:
             - u (qiskit.QuantumCircuit]): In quantum state preparation problem, this is the ansatz. In tomography, this is the circuit that generate random Haar state.
@@ -46,53 +51,89 @@ class QuantumCompilation():
         self.num_steps = 0
         self.set_u(u)
         if isinstance(vdagger, np.ndarray):
-            vdagger = state.specific(vdagger).inverse()
+            vdagger = QuantumCompilation.process_vdagger(vdagger)
         self.set_vdagger(vdagger)
         self.set_optimizer(optimizer)
         self.set_metrics_func(metrics_func)
         self.set_kwargs(**kwargs)
         self.set_thetas(thetas)
         return
-    
+    @staticmethod
+    def process_vdagger(target_state: np.ndarray) -> qiskit.QuantumCircuit:
+        """Convert state to quantum operator
+
+        Args:
+            - target_state (np.ndarray): can be state vector or density metric
+
+        Returns:
+            qiskit.QuantumCircuit: _description_
+        """
+        num_qubits = int(np.log2(target_state.shape[0]))
+        if target_state.ndim == 1:
+            # State vector
+            vdagger = state.specific(target_state).inverse()
+        elif target_state.ndim == 2:
+            # Unitary matrix, Because U is a unitary matrix, so we dont need inverse() here.
+            unitary_matrix = target_state
+            unitary_gate = qiskit.QuantumCircuit(num_qubits)
+            unitary_gate.unitary(unitary_matrix, list(range(0, num_qubits)))
+            unitary_gate = unitary_gate.to_gate(label='InputUnita')
+            vdagger = qiskit.QuantumCircuit(num_qubits)
+            vdagger.append(unitary_gate, list(range(0, num_qubits)))
+        return vdagger
     @staticmethod
     def prepare(target_state: np.ndarray):
+        """Construct a default compiler, default u is g2gnw
+
+        Args:
+            - target_state (np.ndarray): The state which is prepared
+
+        Returns:
+            - QuantumCompilation: constructed compiler
+        """
         num_qubits = int(np.log2(target_state.shape[0]))
-        vdagger = state.specific(target_state).inverse()
-        compiler = QuantumCompilation(ansatz.g2gnw(num_qubits, 2), vdagger)
+        vdagger = QuantumCompilation.process_vdagger(target_state)
+        compiler = QuantumCompilation(ansatz.g2gnw(num_qubits, 1), vdagger)
         return compiler
-    def set_u(self, _u: qiskit.QuantumCircuit) -> None:
+    def set_u(self, _u: qiskit.QuantumCircuit) -> int:
         """In quantum state preparation problem, this is the ansatz. In tomography, this is the circuit that generate random Haar state.
 
         Args:
-            - _u (typing.Union[types.FunctionType, qiskit.QuantumCircuit]): init circuit
+            - _u (typing.Union[types.FunctionType, qiskit.QuantumCircuit]): first operator
+        Returns:
+            - int: 1 means success
         """
         if isinstance(_u, qiskit.QuantumCircuit):
             self.u = _u
         else:
             raise ValueError('The U part must be a determined quantum circuit')
-        return
+        return 1
 
-    def set_vdagger(self, _vdagger) -> None:
+    def set_vdagger(self, _vdagger) -> int:
         """In quantum state tomography problem, this is the ansatz. In state preparation, this is the circuit that generate random Haar state.
 
         Args:
-            - _vdagger (qiskit.QuantumCircuit): init circuit
+            - _vdagger (qiskit.QuantumCircuit): second operator
+        Returns:
+            - int: 1 means success
         """
         if isinstance(_vdagger, qiskit.QuantumCircuit):
             self.vdagger = _vdagger
         else:
             raise ValueError(
                 'The V dagger part must be a determined quantum circuit')
-        return
+        return 1
 
-    def set_metrics_func(self, _metrics_func: typing.List[types.FunctionType] | typing.List[str]) -> None:
+    def set_metrics_func(self, _metrics_func: typing.List[types.FunctionType] | typing.List[str]) -> int:
         """Set the metric function for compiler
 
         Args:
             - _metrics_func (typing.List[types.FunctionType] | typing.List[str])
 
         Raises:
-            ValueError: when you pass wrong type
+            - ValueError: when you pass wrong type
+        Returns:
+            - int: 1 means success
         """
         for _metric_func in _metrics_func:
             if callable(_metric_func):
@@ -104,14 +145,16 @@ class QuantumCompilation():
                     'The metric function must be a function f: u, vdagger, thetas -> metric value or string in qsee.core.metric or self-define')
         return
 
-    def set_optimizer(self, _optimizer: typing.Union[types.FunctionType, str]) -> None:
-        """Change the optimizer of the compiler
+    def set_optimizer(self, _optimizer: types.FunctionType | str) -> int:
+        """Change the optimizer of the compiler.
 
         Args:
-            - _optimizer (typing.Union[types.FunctionType, str])
+            - _optimizer (types.FunctionType | str)
 
         Raises:
-            ValueError: when you pass wrong type
+            - ValueError: when you pass wrong type
+        Returns:
+            - int: 1 means success
         """
         if callable(_optimizer):
             self.optimizer = _optimizer
@@ -120,50 +163,64 @@ class QuantumCompilation():
         else:
             raise ValueError(
                 'The optimizer must be a function f: thetas -> thetas or string in qsee.core.optimizer or self-define')
-        return
+        return 1
 
-    def set_num_steps(self, _num_steps: int) -> None:
+    def set_num_steps(self, _num_steps: int) -> int:
         """Set the number of iteration for compiler
 
         Args:
             - _num_steps (int): number of iterations
 
         Raises:
-            ValueError: when you pass a nasty value
+            - ValueError: when you pass a nasty value
+        Returns:
+            - int: 1 means success
         """
         if _num_steps > 0 and isinstance(_num_steps, int):
             self.num_steps = _num_steps
         else:
             raise ValueError(
                 'Number of iterations must be an integer, take example: 10 or 100.')
-        return
+        return 1
 
-    def set_thetas(self, _thetas: np.ndarray) -> None:
+    def set_thetas(self, _thetas: np.ndarray) -> int:
         """Set parameter, it will be updated at each iteration
 
         Args:
-            _thetas (np.ndarray): parameter for u or vdagger
+            - _thetas (np.ndarray): parameter for u or vdagger
+        Returns:
+            - int: 1 means success
         """
         if isinstance(_thetas, np.ndarray):
             self.thetas = _thetas
         else:
             raise ValueError('The parameter must be numpy array')
-        return
+        return 1
 
-    def set_kwargs(self, **kwargs) -> None:
+    def set_kwargs(self, **kwargs) -> int:
         """Arguments supported for u or vdagger only. Ex: number of layer
-        """
-        self.__dict__.update(**kwargs)
-        self.kwargs = kwargs
-        return
 
-    def fit(self, num_steps: int = 100, metrics_name: typing.List[str] = 'compilation', verbose: int = 0) -> None:
+        Args:
+            - kwargs: list of parameters
+        Returns:
+            - int: 1 means success
+        """
+        try:
+            self.__dict__.update(**kwargs)
+            self.kwargs = kwargs
+            return 1
+        finally:
+            return 0
+
+    def fit(self, num_steps: int = 100, verbose: int = 0):
         """Optimize the thetas parameters
 
         Args:
             - num_steps: number of iterations
             - verbose (int, optional): 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per 10 steps. Verbose 1 is good for timing training time, verbose 2 if you want to log loss values to a file. Please install package tdqm if you want to use verbose 1. 
             - metrics (List[str]): list of metric name that you want, take example, ['compilation', 'gibbs']
+        Returns:
+            - QuantumCompilation: self
         """
         self.num_steps = num_steps
         if len(self.thetas) == 0:
@@ -179,9 +236,9 @@ class QuantumCompilation():
         for i in range(0, num_steps):
             grad_loss = gradient.grad_loss(uvaddager, self.thetas)
             optimizer_name = self.optimizer.__name__
-            if optimizer_name == 'sgd':
+            if optimizer_name == constant.OptimizerName.SGD.value:
                 optimizer_params = [grad_loss]
-            elif optimizer_name == 'adam':
+            elif optimizer_name == constant.OptimizerName.ADAM.value:
                 if i == 0:
                     m, v1 = list(np.zeros(self.thetas.shape[0])), list(
                         np.zeros(self.thetas.shape[0]))
@@ -192,20 +249,20 @@ class QuantumCompilation():
                                             r=1 / 2,
                                             s=np.pi)
                 qc_binded = uvaddager.assign_parameters(self.thetas)
-                psi = qiskit.quantum_info.Statevector.from_instruction(qc_binded).data
+                psi = qi.Statevector.from_instruction(qc_binded).data
                 psi = np.expand_dims(psi, 1)
-                if optimizer_name == 'qng_fubini_study':
+                if optimizer_name == constant.OptimizerName.QNG_FUBINI_STUDY.value:
                     G = gradient.qng(qc_binded)
                     optimizer_params = [G, grad_loss]
-                if optimizer_name == 'qng_fubini_hessian':
+                if optimizer_name == constant.OptimizerName.QNG_FUBINI_STUDY_HESSIAN.value:
                     G = gradient.qng_hessian(uvaddager)
                     optimizer_params = [G, grad_loss]
-                if optimizer_name == 'qng_fubini_study_scheduler':
+                if optimizer_name == constant.OptimizerName.QNG_FUBINI_STUDY_SCHEDULER.value:
                     G = gradient.qng(uvaddager)
-                    optimizer_params = [G, grad_loss, i]
-                if optimizer_name == 'qng_qfim':
+                    optimizer_params = [G, i, grad_loss]
+                if optimizer_name == constant.OptimizerName.QNG_QFIM.value:
                     optimizer_params = [psi, grad_psi1, grad_loss]
-                if optimizer_name == 'qng_adam':
+                if optimizer_name == constant.OptimizerName.QNG_ADAM.value:
                     if i == 0:
                         m, v1 = list(np.zeros(self.thetas.shape[0])), list(
                             np.zeros(self.thetas.shape[0]))
@@ -221,14 +278,20 @@ class QuantumCompilation():
         if verbose == 1:
             bar.close()
         self.calculate_metrics()
-        return
+        return self
 
     def calculate_metrics(self) -> None:
-        for metric in self.metrics_func:
-            metric_params = [self.u, self.vdagger, self.thetass]
-            metric_func: types.FunctionType = self.metrics_func[metric]
-            self.metrics[metric] = metric_func(*metric_params)
-        return
+        try:
+            for metric in self.metrics_func:
+                metric_params = [self.u, self.vdagger, self.thetass]
+                metric_func: types.FunctionType = self.metrics_func[metric]
+                self.metrics[metric] = metric_func(*metric_params)
+            return 1
+        except:
+            raise ValueError("Can not calculate all metrics correctly!")
+        finally:
+            return 0
+        
     def plot(self) -> None:
         """Plot coressponding metrics.
 

@@ -69,8 +69,6 @@ class EarlyStopping:
             return False
 
 # Copy from stackoverflow
-
-
 class ProgressBar(object):
     def __init__(self, max_value, disable=True):
         self.max_value = max_value
@@ -296,7 +294,7 @@ def haar_measure(n):
     """A Random matrix distributed with Haar measure
 
     Args:
-        - n
+        - n: dimensional of matrix
     """
     z = (scipy.randn(n, n) + 1j*scipy.randn(n, n))/scipy.sqrt(2.0)
     q, r = scipy.linalg.qr(z)
@@ -471,17 +469,17 @@ def compose_circuit(qcs: typing.List[qiskit.QuantumCircuit]) -> qiskit.QuantumCi
                 i += 2
             qc.append(instruction[0], instruction[1])
     return qc
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]
+def find_nearest(xs: typing.List, x):
+    xs = np.asarray(xs)
+    idx = (np.abs(xs - x)).argmin()
+    return xs[idx]
 
-def append_to_dict(tup, new_items):
+def append_to_dict(tuple, new_items):
     for key, value in new_items.items():
         # Check if the key already exists in the dictionary
-        if key in tup:
+        if key in tuple:
             # If the key exists, append the value to its list
-            tup[key].append(value)
+            tuple[key].append(value)
         else:
             # If the key doesn't exist, create a new key-value pair with the key and a list containing the value
-            tup[key] = [value]
+            tuple[key] = [value]

@@ -9,6 +9,9 @@ from qiskit.circuit.library.standard_gates import (IGate, U1Gate, U2Gate, U3Gate
                                                    CYGate, CZGate, CHGate, CRXGate, CRYGate, CRZGate, CU1Gate,
                                                    CU3Gate, SwapGate, RZZGate,
                                                    CCXGate, CSwapGate)
+from qsee.core.metric import compilation_trace_distance, compilation_trace_fidelities, gibbs_trace_distances, gibbs_trace_fidelities
+
+from qsee.core.optimizer import qng_fubini_study_hessian, qng_fubini_study_scheduler, qng_qfim
 
 
 # GA process
@@ -16,28 +19,47 @@ class GAMode(enum.Enum):
     NORMAL_MODE = 'normal_mode'
     PREDICTOR_MODE = 'predict_node'
 
+# Measurement mode
 class MeasureMode(enum.Enum):
     THEORY = 'theory'
     SIMULATE = 'simulate'
+# Optimizer name
+class OptimizerName(enum.Enum):
+    SGD = 'sgd'
+    ADAM = 'adam'
+    QNG_ADAM = 'qng_adam'
+    QNG_FUBINI_STUDY = 'qng_fubini_study'
+    QNG_FUBINI_STUDY_HESSIAN = 'qng_fubini_study_hessian'
+    QNG_FUBINI_STUDY_SCHEDULER = 'qng_fubini_study_scheduler'
+    QNG_QFIM = 'qng_qfim'
     
+class MetricName(enum.Enum):
+    LOSS_BASIC = 'loss_basic'
+    LOSS_FUBINI_STUDY = 'loss_fubini_study'
+    COMPILATION_TRACE_DISTANCES = 'compilation_trace_distances'
+    COMPILATION_TRACE_FIDELITIES = 'compilation_trace_fidelities'
+    GIBBS_TRACE_DISTANCES = 'gibbs_trace_distances'
+    GIBBS_TRACE_FIDELITIES = 'gibbs_trace_fidelities'
+    
+DEFAULT_COMPILATION_METRICS = [MetricName.LOSS_FUBINI_STUDY.value, 
+             MetricName.COMPILATION_TRACE_FIDELITIES.value, 
+             MetricName.COMPILATION_TRACE_DISTANCES.value]
 # Predictor hyperparameter
 DROP_OUT_RATE = 0.5
 L2_REGULARIZER_RATE = 0.005
 NUM_EPOCH = 100
 # Training hyperparameter
+DEFAULT_NUM_STEPS = 100
 NUM_SHOTS = 10000
 LEARNING_RATE = 0.1
 NOISE_PROB = 0.0  # [0, 1]
 GAMMA = 0.7  # learning rate decay rate
 DELTA = 0.01  # minimum change value of loss value
-DISCOUNTING_FACTOR = 0.3  # [0, 1]
-# backend = qiskit.Aer.get_backend('statevector_simulator') 
+DISCOUNTING_FACTOR = 0.3  # In [0, 1]
 
 # Logger
-
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-
 
 # For parameter-shift rule
 two_term_psr = {
