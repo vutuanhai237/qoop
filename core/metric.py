@@ -7,7 +7,7 @@ import scipy
 import typing
 
 
-def loss_basis(
+def loss_basic(
     u: qiskit.QuantumCircuit,
     vdagger: qiskit.QuantumCircuit,
     thetass: typing.List[np.ndarray],

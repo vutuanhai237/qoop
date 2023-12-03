@@ -18,13 +18,11 @@ class QuantumCompilation():
         self.vdagger = None
         self.is_trained = False
         self.optimizer = None
-        self.loss_func = None
         self.thetas = None
         self.thetass = []
         self.metrics = {}
         self.metrics_func = {}
         self.kwargs = None
-        self.is_evolutional = False
         self.num_steps = 0
         return
 
@@ -47,7 +45,6 @@ class QuantumCompilation():
         self.metrics = {}
         self.metrics_func = {}
         self.kwargs = None
-        self.is_evolutional = False
         self.num_steps = 0
         self.set_u(u)
         if isinstance(vdagger, np.ndarray):
@@ -74,12 +71,7 @@ class QuantumCompilation():
             vdagger = state.specific(target_state).inverse()
         elif target_state.ndim == 2:
             # Unitary matrix, Because U is a unitary matrix, so we dont need inverse() here.
-            unitary_matrix = target_state
-            unitary_gate = qiskit.QuantumCircuit(num_qubits)
-            unitary_gate.unitary(unitary_matrix, list(range(0, num_qubits)))
-            unitary_gate = unitary_gate.to_gate(label='InputUnita')
-            vdagger = qiskit.QuantumCircuit(num_qubits)
-            vdagger.append(unitary_gate, list(range(0, num_qubits)))
+            vdagger = state.specific_matrix(target_state)
         return vdagger
     @staticmethod
     def prepare(target_state: np.ndarray):
@@ -299,8 +291,8 @@ class QuantumCompilation():
             metrics (typing.List[str]): can be loss, compilation, gibbs or ce
         """
         for metric in self.metrics:
-            plt.plot(self.metrics[metric], label = metric)
-        plt.ylabel("Value")
+            plt.plot(range(1, self.num_steps + 1), self.metrics[metric], label = metric)
+        plt.ylabel("Metric value")
         plt.xlabel('Num. iteration')
         plt.legend()
         return
@@ -354,7 +346,6 @@ class QuantumCompilation():
         self.vdagger = None
         self.is_trained = False
         self.optimizer = None
-        self.loss_func = None
         self.num_steps = 0
         self.thetas = None
         self.thetass = []

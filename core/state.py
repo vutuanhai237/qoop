@@ -2,6 +2,7 @@ import qiskit
 import numpy as np
 import typing
 import types
+from ..backend import utilities
 from scipy.linalg import expm
 from qiskit.extensions import UnitaryGate
 """
@@ -233,7 +234,17 @@ def ghz_inverse(num_qubits: int, theta: float = np.pi / 2) -> qiskit.QuantumCirc
     qc.ry(-theta, 0)
     return qc
 
-
+def specific_matrix(matrix: np.ndarray) -> qiskit.QuantumCircuit:
+    if utilities.is_unitary(matrix) == False:
+        matrix = utilities.to_unitary(matrix)
+    num_qubits = int(np.log2(matrix.shape[0]))
+    unitary_matrix = matrix
+    unitary_gate = qiskit.QuantumCircuit(num_qubits)
+    unitary_gate.unitary(unitary_matrix, list(range(0, num_qubits)))
+    unitary_gate = unitary_gate.to_gate(label='InputUnita')
+    qc = qiskit.QuantumCircuit(num_qubits)
+    qc.append(unitary_gate, list(range(0, num_qubits)))
+    return qc
 def specific(state: np.ndarray) -> qiskit.QuantumCircuit:
     """Create a random Haar quantum state
 
@@ -332,7 +343,7 @@ def ame(num_qubits: int) -> qiskit.QuantumCircuit:
             0,
             0,
             0.740*(np.cos(-0.79*np.pi)+1j*np.sin(-0.79*np.pi))])
-    if num_qubits == 4:
+    elif num_qubits == 4:
         w = np.exp(2*np.pi*1j/3)
         amplitude_state = 1/np.sqrt(6)*np.array([
             0.0,
@@ -351,6 +362,8 @@ def ame(num_qubits: int) -> qiskit.QuantumCircuit:
             0,
             0,
             0,])
+    else:
+        raise ValueError("The AME state currently available for 3 and 4 qubits")
     return specific(amplitude_state)
 
 
@@ -408,11 +421,11 @@ def calculate_terms_partition(eigenvalues: typing.List, beta: int) -> typing.Tup
     """calculate term partitions
 
     Args:
-        eigenvalues (typing.List)
-        beta (int): 0, 1 or 5
+        - eigenvalues (typing.List)
+        - beta (int): 0, 1 or 5
 
     Returns:
-        typing.Tuple
+        - typing.Tuple
     """
     list_terms = []
     partition_sum = 0
@@ -427,11 +440,11 @@ def tfd(num_qubits: int, beta: int) -> qiskit.QuantumCircuit:
     """Create TFD state
 
     Args:
-        num_qubits (int)
-        beta (int): 0, 1 or 5
+        - num_qubits (int)
+        - beta (int): 0, 1 or 5
 
     Returns:
-        qiskit.QuantumCircuit
+        - qiskit.QuantumCircuit
     """
     # In this implementation, the eigenvectors of the Hamiltonian and the transposed Hamiltonian are calculated separately
     y_gate = 1
@@ -442,16 +455,13 @@ def tfd(num_qubits: int, beta: int) -> qiskit.QuantumCircuit:
     matrix = calculate_hamiltonian(num_qubits)
     eigen = find_eigenvec_eigenval(matrix)
     partition = calculate_terms_partition(eigen[0], beta)
-
     vec = np.zeros(2**(2*num_qubits))
     for i in range(0, 2**num_qubits):
-
         time_rev = complex(0, 1)*np.matmul(y_gate, np.conj(eigen[1][i]))
         addition = (
             float((partition[0][i]/partition[1]).real))*(np.kron(eigen[1][i], time_rev))
         vec = np.add(vec, addition)
-    amplitude_state = vec/np.sqrt(sum(np.absolute(vec) ** 2))
-    return specific(amplitude_state)
+    return specific(vec)
 
 def time_dependent_qc(num_qubits: int,h_opt, t):
     """create U circuit from h_opt and time t

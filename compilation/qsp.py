@@ -49,6 +49,11 @@ class QuantumStatePreparation:
         self.fidelity = fidelities[0]
         self.qc = self.u.assign_parameters(self.thetas)
         return self
+    
+    def plot(self):
+        self.compiler.plot()
+        return
+    
     def fit(self, num_steps: int = 100, verbose: int = 0, **kwargs):
         optimizer: str = kwargs.get('optimizer', 'adam')
         metrics_func: str = kwargs.get(

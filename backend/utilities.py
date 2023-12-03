@@ -483,3 +483,43 @@ def append_to_dict(tuple, new_items):
         else:
             # If the key doesn't exist, create a new key-value pair with the key and a list containing the value
             tuple[key] = [value]
+            
+def is_unitary(matrix: np.ndarray) -> bool:
+    """Check if a matrix is unita or not
+
+    Args:
+        - matrix (np.ndarray): Input matrix
+
+    Returns:
+        - bool: Is unita or not
+    """
+    # Check if the matrix is square
+    if matrix.shape[0] != matrix.shape[1]:
+        return False
+    # Check if U^\dagger U is approximately equal to the identity matrix
+    product = np.dot(np.conjugate(matrix).T, matrix)
+    identity_matrix = np.eye(matrix.shape[0])
+
+    # Tolerance for numerical precision
+    tolerance = 1e-10
+    return np.allclose(product, identity_matrix)
+
+def to_unitary(matrix: np.ndarray) -> np.ndarray:
+    """Convert arbitrary matrix to unitary matrix
+
+    Args:
+        - matrix (np.ndarray): Input matrix
+
+    Raises:
+        - ValueError: Can not convert matrix to unitary matrix
+
+    Returns:
+        - np.ndarray: Unitary matrix
+    """
+    eigenvalues, eigenvectors = np.linalg.eig(matrix)
+    normalized_eigenvectors = eigenvectors / np.linalg.norm(eigenvectors, axis=0)
+    if is_unitary(normalized_eigenvectors):
+        return normalized_eigenvectors
+    else:
+        raise ValueError("This matrix can not convert to unitary form!")
+        return 0
