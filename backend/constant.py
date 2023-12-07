@@ -9,9 +9,7 @@ from qiskit.circuit.library.standard_gates import (IGate, U1Gate, U2Gate, U3Gate
                                                    CYGate, CZGate, CHGate, CRXGate, CRYGate, CRZGate, CU1Gate,
                                                    CU3Gate, SwapGate, RZZGate,
                                                    CCXGate, CSwapGate)
-from qsee.core.metric import compilation_trace_distance, compilation_trace_fidelities, gibbs_trace_distances, gibbs_trace_fidelities
 
-from qsee.core.optimizer import qng_fubini_study_hessian, qng_fubini_study_scheduler, qng_qfim
 
 
 # GA process

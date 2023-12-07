@@ -3,6 +3,7 @@ import qiskit
 import scipy
 import tqdm
 import numpy as np
+from qiskit import qpy
 from ..backend import constant
 
 
@@ -258,7 +259,7 @@ def save_circuit(qc: qiskit.QuantumCircuit, file_name: str) -> None:
     """
 
     with open(f"{file_name}.qpy", "wb") as qpy_file_write:
-        qiskit.qpy.dump(qc, qpy_file_write)
+        qpy.dump(qc, qpy_file_write)
     return
 
 
@@ -272,7 +273,7 @@ def load_circuit(file_name: str) -> qiskit.QuantumCircuit:
         qiskit.QuantumCircuit
     """
     with open(f"{file_name}.qpy", "rb") as qpy_file_read:
-        qc = qiskit.qpy.load(qpy_file_read)[0]
+        qc = qpy.load(qpy_file_read)[0]
     return qc
 
 def unit_vector(i: int, length: int) -> np.ndarray:

@@ -10,7 +10,7 @@ import typing
 import random
 import datetime
 import pickle
-import os
+import os, json
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -87,7 +87,8 @@ class EEnvironment():
             self.population = data.population
             self.populations = data.populations
             self.best_score_progress = data.best_score_progress
-            self.fitness_in_loop = data.fitness_in_loop
+            self.fitnesss = data.fitnesss
+            self.fitnessss = []
         else:
             self.params = params
             self.fitness_func = fitness_func
@@ -99,9 +100,10 @@ class EEnvironment():
             self.best_candidate = None
             self.current_generation = 0
             self.population: typing.List[ECircuit] = []
-            self.populations = []
+            self.populations: typing.List[typing.List[ECircuit]] = []
             self.best_score_progress = []
-            self.fitness_in_loop = []
+            self.fitnesss = []
+            self.fitnessss = []
         self.depth = params['depth']
         self.num_circuit = params['num_circuit']  # Must mod 8 = 0
         self.num_generation = params['num_generation']
@@ -166,13 +168,13 @@ class EEnvironment():
             for i in range(len(self.population)):
                 self.population[i].compile()
             self.populations.append(self.population)          
-            self.fitness_in_loop.extend(extract_fitness(self.population))
-            print(self.fitness_in_loop)
+            self.fitnesss.extend(extract_fitness(self.population))
+            self.fitnessss.append(self.fitnesss)
             #####################
             ##### Pre-process ###
             #####################
-            best_score = np.min(self.fitness_in_loop)
-            best_index = np.argmin(self.fitness_in_loop)
+            best_score = np.min(self.fitnesss)
+            best_index = np.argmin(self.fitnesss)
             
             if self.best_candidate.fitness > self.population[best_index].fitness:
                 self.best_candidate = self.population[best_index]
@@ -208,7 +210,7 @@ class EEnvironment():
         num_sastify_circuit = 0
 
         while(num_sastify_circuit <= self.num_circuit):
-            circuit = qsee.random_circuit.generate_with_pool(
+            circuit = random_circuit.generate_with_pool(
                 self.num_qubits, self.depth, self.pool)
             if sastify_circuit(circuit):
                 num_sastify_circuit += 1
@@ -254,12 +256,7 @@ class EEnvironment():
             if metric == 'best_fitness':
                 plt.plot(list(range(1, self.current_generation + 1)), self.best_score_progress, label = metric)
             if metric == 'average_fitness':
-                average_fitness = []
-                for generation in self.populations:
-                    fitnesss = []
-                    for circuit in generation:
-                        fitnesss.append(circuit.fitness)
-                    average_fitness.append(np.mean(fitnesss))
+                average_fitness = (np.mean(self.fitnesss))
                 plt.plot(list(range(1, self.current_generation + 1)), average_fitness, label = metric)
         plt.legend()
         plt.xlabel('No. generation')
@@ -271,7 +268,30 @@ class EEnvironment():
         Args:
             file_name (str): Path
         """
-        file = open(file_name, 'wb')
-        pickle.dump(self, file)
-        file.close()
+        if not os.path.exists(file_name):
+            os.mkdir(file_name)
+        metadata = {
+            'num_qubits': self.num_qubits,
+            'depth': self.depth,
+            'num_circuit': self.num_circuit ,
+            'num_generation': self.num_generation ,
+            'fitness_func': self.fitness_func.__name__,
+            'crossover_func': self.crossover_func.__name__,
+            'mutate_func': self.mutate_func.__name__,
+            'selection_func': self.selection_func.__name__,
+            'fitnessss': self.fitnessss,
+            'best_score_progress': self.best_score_progress,
+            'current_generation': self.current_generation,
+            'prob_mutate': self.prob_mutate,
+            'threshold': self.threshold.__name__
+        }
+        with open(f"{os.path.join(file_name, 'info')}.json", "w") as file:
+            json.dump(metadata, file)
+        for i, population in enumerate(self.populations):
+            for j, circuit in enumerate(population):
+                utilities.save_circuit(
+                    qc = circuit.qc, 
+                    file_name = os.path.join(file_name, f'circuit_{i}_{j}')
+                )
         return
+        
