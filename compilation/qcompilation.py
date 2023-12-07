@@ -284,7 +284,7 @@ class QuantumCompilation():
         finally:
             return 0
         
-    def plot(self) -> None:
+    def plot(self, filename = '') -> None:
         """Plot coressponding metrics.
 
         Args:
@@ -295,6 +295,8 @@ class QuantumCompilation():
         plt.ylabel("Metric value")
         plt.xlabel('Num. iteration')
         plt.legend()
+        if len(filename) > 0:
+            plt.savefig(f'{filename}.eps', format='eps', dpi = 1000)
         return
 
     def plot_animation(self, interval: int = 100, file_name: str = 'test.gif'):

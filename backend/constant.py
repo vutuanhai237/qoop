@@ -41,9 +41,11 @@ class MetricName(enum.Enum):
     GIBBS_TRACE_DISTANCES = 'gibbs_trace_distances'
     GIBBS_TRACE_FIDELITIES = 'gibbs_trace_fidelities'
     
-DEFAULT_COMPILATION_METRICS = [MetricName.LOSS_FUBINI_STUDY.value, 
-             MetricName.COMPILATION_TRACE_FIDELITIES.value, 
-             MetricName.COMPILATION_TRACE_DISTANCES.value]
+DEFAULT_COMPILATION_METRICS = [
+    MetricName.LOSS_FUBINI_STUDY.value, 
+    MetricName.COMPILATION_TRACE_FIDELITIES.value, 
+    MetricName.COMPILATION_TRACE_DISTANCES.value
+]
 # Predictor hyperparameter
 DROP_OUT_RATE = 0.5
 L2_REGULARIZER_RATE = 0.005
@@ -56,7 +58,7 @@ NOISE_PROB = 0.0  # [0, 1]
 GAMMA = 0.7  # learning rate decay rate
 DELTA = 0.01  # minimum change value of loss value
 DISCOUNTING_FACTOR = 0.3  # In [0, 1]
-
+BETA1, BETA2, EPSILON = 0.8, 0.999, 10 ** (-8) # adam hyper-parameters
 # Logger
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

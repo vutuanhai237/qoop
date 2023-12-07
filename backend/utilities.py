@@ -523,3 +523,22 @@ def to_unitary(matrix: np.ndarray) -> np.ndarray:
     else:
         raise ValueError("This matrix can not convert to unitary form!")
         return 0
+    
+def to_state(dict: typing.Dict) -> np.ndarray:
+    """Convert a dict example: dict = {'000': 1/np.sqrt(2), '001': 1j/np.sqrt(6), '100': 0.5} to state vector
+    
+    Output: [0.70710678+0.j         0.        +0.40824829j 0.        +0.j
+            0.        +0.j         0.5       +0.j         0.        +0.j
+            0.        +0.j         0.        +0.j        ]
+    Args:
+        - dict (typing.Dict): Input dict
+
+    Returns:
+        - np.ndarray: State vector
+    """
+    n = len(list(dict.keys())[0])
+    state = np.zeros(2**n, dtype=np.complex128)
+    for key, value in dict.items():
+        index = int(key, 2)
+        state[index] = value
+    return state

@@ -37,7 +37,7 @@ def adam(
         - np.ndarray: parameters after update
     """
     num_thetas = thetas.shape[0]
-    beta1, beta2, epsilon = 0.8, 0.999, 10 ** (-8)
+    beta1, beta2, epsilon = constant.BETA1, constant.BETA2, constant.EPSILON
     for i in range(0, num_thetas):
         m[i] = beta1 * m[i] + (1 - beta1) * grad_loss[i]
         v[i] = beta2 * v[i] + (1 - beta2) * grad_loss[i] ** 2
