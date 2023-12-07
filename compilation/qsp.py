@@ -117,7 +117,7 @@ class QuantumStatePreparation:
             raise TypeError("Please input a path to json file or qsp folder")
         return qspobj
     @staticmethod
-    def prepare(state: str | np.ndarray | typing.List, **kwargs):
+    def prepare(state: str | np.ndarray | typing.List | typing.Dict, **kwargs):
         """Call two sub-function prepare
 
         Args:
@@ -131,11 +131,16 @@ class QuantumStatePreparation:
         """
         if isinstance(state, str):
             return QuantumStatePreparation.prepare_existed(state, **kwargs)
-        elif isinstance(state, np.ndarray) or isinstance(state, typing.List):
+        elif isinstance(state, typing.List):
             state = np.array(state)
-            return QuantumStatePreparation.prepare_random(state, **kwargs)
+        elif isinstance(state, np.ndarray):
+            pass
+        elif isinstance(state, typing.Dict):
+            state = utilities.to_state(state)
         else:
-            raise TypeError("Please input target state name or an array")
+            raise TypeError("Please input target state name or an array or dict")
+        compiler = QuantumStatePreparation.prepare_random(state, **kwargs)
+        return compiler
     @staticmethod
     def prepare_random(state: np.ndarray, **kwargs) -> QuantumCompilation:
         """Preparing arbitrary state where stae can be quantum state or unitary matrix
