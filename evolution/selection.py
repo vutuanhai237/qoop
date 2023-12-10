@@ -1,17 +1,18 @@
 import numpy as np
-
+from .utilities import sort_by_fitness
 def sastify_circuit(qc):
     if len(qc.parameters) == 0:
         return False
     return True
     
-def elitist_selection(population, num_elitist = 0):
-    num_population = len(population)
+def elitist_selection(objects, fitnesss, num_elitist = 0):
     if num_elitist == 0:
-        num_elitist = int(num_population/2)
-    population = sorted(population, key=lambda obj: obj.fitness)
-    
-    return population[:num_elitist]
+        num_elitist = int(len(objects)/2)
+    sorted_object = sort_by_fitness(objects, fitnesss)
+    return sorted_object[:num_elitist]
+
+
+
 
 def steady_state_selection(self, fitness, num_parents):
 

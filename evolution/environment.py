@@ -1,18 +1,23 @@
 
-import concurrent.futures
-import matplotlib.pyplot as plt
+
 from .ecircuit import ECircuit
 from .selection import sastify_circuit
+from ..evolution import crossover, mutate, selection, threshold
 from ..core import random_circuit
 from ..backend import utilities
+from dataclasses import dataclass, field
 import types
 import typing
 import random
+import os
+import json
 import datetime
-import pickle
-import os, json
+import pathlib
+import qiskit
 import numpy as np
 import matplotlib.pyplot as plt
+import concurrent.futures
+
 
 def extract_fitness(circuits: typing.List[ECircuit]):
     extracted_score = []
@@ -20,46 +25,48 @@ def extract_fitness(circuits: typing.List[ECircuit]):
         extracted_score.append(circuit.fitness)
     return extracted_score
 
+
 def extract_circuit(circuits: typing.List[ECircuit]):
     extracted_circuits = []
     for circuit in circuits:
-        extracted_circuits.append(circuit.qc)
+        extracted_circuits.append(circuit)
     return extracted_circuits
+
 
 def bypass_compile(circuit: ECircuit):
     circuit.compile()
     print('Bypass', circuit.fitness)
     return circuit
+
+
 def multiple_compile(circuits: typing.List[ECircuit]):
     executor = concurrent.futures.ProcessPoolExecutor()
     results = executor.map(bypass_compile, circuits)
     return results
+
+
+@dataclass
+class EEnvironmentMetadata:
+    num_qubits: int
+    depth: int
+    num_circuit: int
+    num_generation: int
+    current_generation: int = field(default_factory=lambda: 0)
+    fitnessss: list = field(default_factory=lambda: [])
+    prob_mutate: float = field(default_factory=lambda: 0.1)
+
+
 class EEnvironment():
     """Saved information for evolution process
     """
-    def __init__(self, file_name: str):
-        """_summary_
 
-        Args:
-            file_name (str): _description_
-        """
-        file = open(file_name, 'rb')
-        data = pickle.load(file)
-        self.__init__(
-            data.params,
-            data.fitness_func,
-            data.crossover_func,
-            data.mutate_func,
-            data.selection_func,
-            data.pool, data.file_name)
-        file.close()
-        return
-    def __init__(self, params: typing.Dict | str,
+    def __init__(self, metadata: EEnvironmentMetadata | dict,
                  fitness_func: types.FunctionType = None,
-                 crossover_func: types.FunctionType = None,
-                 mutate_func: types.FunctionType = None,
-                 selection_func: types.FunctionType = None,
-                 pool = None, file_name: str = '') -> None:
+                 crossover_func: types.FunctionType = crossover.onepoint_crossover,
+                 mutate_func: types.FunctionType = mutate.bitflip_mutate,
+                 selection_func: types.FunctionType = selection.elitist_selection,
+                 threshold_func: types.FunctionType = threshold.compilation_threshold,
+                 ) -> None:
         """_summary_
 
         Args:
@@ -71,165 +78,152 @@ class EEnvironment():
             pool (_type_, optional): Pool gate. Defaults to None.
             file_name (str, optional): Path of saved file.
         """
-        if isinstance(params, str):
-            file = open(params, 'rb')
-            data = pickle.load(file)
-            params = data.params
-            self.params = data.params
-            self.fitness_func = data.fitness_func
-            self.crossover_func = data.crossover_func
-            self.mutate_func = data.mutate_func
-            self.selection_func = data.selection_func
-            self.pool = data.pool
-            self.file_name = data.file_name
-            self.best_candidate = data.best_candidate
-            self.current_generation = data.current_generation
-            self.population = data.population
-            self.populations = data.populations
-            self.best_score_progress = data.best_score_progress
-            self.fitnesss = data.fitnesss
-            self.fitnessss = []
-        else:
-            self.params = params
-            self.fitness_func = fitness_func
-            self.crossover_func = crossover_func
-            self.mutate_func = mutate_func
-            self.selection_func = selection_func
-            self.pool = pool
-            self.file_name = file_name
-            self.best_candidate = None
-            self.current_generation = 0
-            self.population: typing.List[ECircuit] = []
-            self.populations: typing.List[typing.List[ECircuit]] = []
-            self.best_score_progress = []
-            self.fitnesss = []
-            self.fitnessss = []
-        self.depth = params['depth']
-        self.num_circuit = params['num_circuit']  # Must mod 8 = 0
-        self.num_generation = params['num_generation']
-        self.num_qubits = params['num_qubits']
-        self.prob_mutate = params['prob_mutate']
-        self.threshold = params['threshold']
-        self.predictor = None
+
+        self.metadata = metadata
+        self.fitness_func = fitness_func
+        self.crossover_func = crossover_func
+        self.mutate_func = mutate_func
+        self.selection_func = selection_func
+        self.threshold_func = threshold_func
+        if isinstance(metadata, EEnvironmentMetadata):
+            self.metadata = metadata
+        elif isinstance(metadata, dict):
+            self.metadata = EEnvironmentMetadata(
+                num_qubits=metadata.get('num_qubits', 0),
+                depth=metadata.get('depth', 0),
+                num_circuit=metadata.get('num_circuit', 0),
+                num_generation=metadata.get('num_generation', 0),
+                current_generation=metadata.get('current_generation', 0),
+                fitnessss=metadata.get('fitnessss', []),
+                prob_mutate=metadata.get('prob_mutate', []),
+            )
+        self.fitnesss: list = []
+        self.circuits: typing.List[ECircuit] = []
+        self.circuitss: typing.List[typing.List[ECircuit]] = []
+        self.best_circuit = None
+        self.best_fitness = 0
         return
-    def calculate_strength_point(self):
-        inverse_fitnesss = [1- circuit.fitness for circuit in self.population]
-        mean_inverse_fitnesss = np.mean(inverse_fitnesss)
-        std_inverse_fitnesss = np.std(inverse_fitnesss)
-        strength_points = [(1 - circuit.fitness - mean_inverse_fitnesss)/std_inverse_fitnesss for circuit in self.population]
-        scaled_strength_points = utilities.softmax(strength_points, self.depth)
-        for i, circuit in enumerate(self.population):
-            circuit.strength_point = scaled_strength_points[i]
+
+    def set_fitness_func(self, fitness_func):
+        self.fitness_func = fitness_func
         return
-    
+
+    def set_circuitss(self, circuitss):
+        self.circuitss: typing.List[typing.List[qiskit.QuantumCircuit]] = circuitss
+        return
+
+    def set_circuits(self, circuits):
+        self.circuits: typing.List[qiskit.QuantumCircuit] = circuits
+        return
+
     def evol(self, verbose: int = 0):
         if verbose == 1:
             bar = utilities.ProgressBar(
-                max_value=self.num_generation, disable=False)
-        if self.current_generation == 0:
-            print("Initialize population ...")
+                max_value=self.metadata.num_generation, disable=False)
+        if self.metadata.current_generation == 0:
+            print("Initialize list of circuit ...")
             self.init()
             print("Start evol progress ...")
-        elif self.current_generation == self.num_generation:
+        elif self.metadata.current_generation == self.metadata.num_generation:
             return
         else:
-            print(f"Continute evol progress at generation {self.current_generation} ...")
-        for generation in range(self.current_generation, self.num_generation):
+            print(
+                f"Continute evol progress at generation {self.metadata.current_generation} ...")
+        for generation in range(self.metadata.current_generation, self.metadata.num_generation):
             #####################
             ##### Pre-process ###
             #####################
-            print(f"Evol at generation {generation}")
-            self.current_generation += 1
-            self.fitness_in_loop = []
-            new_population: typing.List[ECircuit] = []
-            offsprings = []
+            self.metadata.current_generation += 1
+            print(f"Evol at generation {self.metadata.current_generation}")
+            self.fitnesss = []
+            #####################
+            ######## Cost #######
+            #####################
+            # new_population = multiple_compile(new_population)
+            for i in range(len(self.circuits)):
+                self.fitnesss.append(self.fitness_func(self.circuits[i]))
+            print(self.fitnesss)
+            if generation > 0:
+                self.metadata.fitnessss.append(self.fitnesss)
+            #####################
+            #### Threshold ######
+            #####################
+            if self.best_circuit is None or self.fitness_func(self.best_circuit) < np.max(self.fitnesss):
+                self.best_circuit = self.circuits[np.argmax(self.fitnesss)]
+                self.best_fitness = np.max(self.fitnesss)
+                if self.threshold_func(self.best_fitness):
+                    print(
+                        f'End evol progress soon at generation {self.metadata.current_generation}, best score ever: {self.best_fitness}')
+                    return
+
             #####################
             ##### Selection #####
             #####################
-            self.population = self.selection_func(self.population)
-            #random.shuffle(self.population)
+            self.circuits = self.selection_func(self.circuits, self.fitnesss)
+            # random.shuffle(self.circuits)
             #####################
             ##### Cross-over ####
             #####################
-            for i in range(0, int(self.num_circuit/2), 2):
-                print("Cross-over")
-                print(self.population[i].qc.draw())
-                print(self.population[i + 1].qc.draw())
+            new_circuits: typing.List[ECircuit] = []
+            for i in range(0, int(self.metadata.num_circuit/2), 2):
+                # print("Cross-over")
+                # print(self.circuits[i].draw())
+                # print(self.circuits[i + 1].draw())
                 offspring1, offspring2 = self.crossover_func(
-                        self.population[i], self.population[i + 1])
-                print("Child")
-                print(offspring1.qc.draw())
-                print(offspring2.qc.draw())
-                new_population.extend([self.population[i], self.population[i + 1], offspring1, offspring2])
-            
-            
-            # new_population = multiple_compile(new_population)
-            self.population = new_population
-            for i in range(len(self.population)):
-                self.population[i].compile()
-            self.populations.append(self.population)          
-            self.fitnesss.extend(extract_fitness(self.population))
-            self.fitnessss.append(self.fitnesss)
-            #####################
-            ##### Pre-process ###
-            #####################
-            best_score = np.min(self.fitnesss)
-            best_index = np.argmin(self.fitnesss)
-            
-            if self.best_candidate.fitness > self.population[best_index].fitness:
-                self.best_candidate = self.population[best_index]
-                self.population[best_index].true_compile()
-                print('Again', self.population[best_index].true_fitness)
-                if self.threshold(self.population[best_index].true_fitness):
-                    break
-            self.best_score_progress.append(best_score)
-            
-            # self.save(self.file_name + f'ga_{self.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}.envobj')
-            if verbose == 1:
-                bar.update(1)
-            if verbose == 2 and generation % 5 == 0:
-                print("Step " + str(generation) + ": " + str(best_score))
+                    self.circuits[i], self.circuits[i + 1])
+                # print("Child")
+                # print(offspring1.draw())
+                # print(offspring2.draw())
+                new_circuits.extend(
+                    [self.circuits[i], self.circuits[i + 1], offspring1, offspring2])
 
             ####################
             ##### Mutation #####
             ####################
-            
-            for i in range(0, len(self.population)):
-                if random.random() < self.prob_mutate:
+            for i in range(0, len(new_circuits)):
+                if random.random() < self.metadata.prob_mutate:
                     print('Mutate')
-                    self.population[i] = self.mutate_func(self.population[i], self.pool)
-                    
-            
-        print(f'End evol progress, best score ever: {best_score}')
+                    new_circuits[i] = self.mutate_func(new_circuits[i])
+            self.circuits = new_circuits
+            self.circuitss.append(new_circuits)
+            # self.save(self.file_name + f'ga_{self.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}.envobj')
+            if verbose == 1:
+                bar.update(1)
+            if verbose == 2 and generation % 5 == 0:
+                print("Step " + str(generation) +
+                      ", best score: " + str(np.max(self.fitnesss)))
+
+        print(f'End evol progress, best score ever: {self.best_fitness}')
         return
 
     def init(self):
         """Create and evaluate first generation in the environment
         """
-        self.population = []
+        if self.fitness_func is None:
+            raise ValueError("Please set fitness function before init")
         num_sastify_circuit = 0
-
-        while(num_sastify_circuit <= self.num_circuit):
+        while (num_sastify_circuit < self.metadata.num_circuit):
             circuit = random_circuit.generate_with_pool(
-                self.num_qubits, self.depth, self.pool)
+                self.metadata.num_qubits, self.metadata.depth)
             if sastify_circuit(circuit):
                 num_sastify_circuit += 1
-                ecircuit = ECircuit(
-                    circuit,
-                    self.fitness_func)
-                self.population.append(ecircuit)
-                ecircuit.compile()
-        self.best_candidate = self.population[0]
+                self.circuits.append(circuit)
+        #         self.fitnesss.append(self.fitness_func(circuit))
+        # self.circuitss.append(self.circuits)
+        # self.metadata.fitnessss.append(self.fitnesss)
+        # self.best_circuit = self.circuits[np.argmax(self.fitnesss)]
+        # self.best_fitness = np.max(self.fitnesss)
         return
-    
-    def set_num_generation(self, _num_generation) -> None:
+
+    def set_num_generation(self, num_generation: int) -> None:
         """Set new value for number of generation
 
         Args:
             _num_generation (_type_): _description_
         """
-        self.num_generation = _num_generation
+        self.metadata.num_generation = num_generation
         return
+
     def draw(self, file_name: str = ''):
         """Save all circuit from all generation at a specific path
 
@@ -237,31 +231,61 @@ class EEnvironment():
             file_name (str, optional): Path. Defaults to ''.
         """
         generation = 0
-        for population in self.populations:
+        for circuits in self.circuitss:
             generation += 1
             index = 0
-            for circuit in population:
+            for circuit in circuits:
                 path = f'{file_name}/{generation}'
                 index += 1
                 isExist = os.path.exists(path)
                 if not isExist:
                     os.makedirs(path)
-                circuit.qc.draw('mpl').savefig(f'{path}/{index}.png')
+                circuit.draw('mpl').savefig(f'{path}/{index}.png')
         return
-    def plot(self, metrics: str = ['best_fitness','average_fitness']):
+
+    def plot(self, metrics: str = ['best_fitness', 'average_fitness']):
         """Plot number of generation versus best score of each generation
         Example: ['best_fitness','average_fitness']
         """
+        ticks_generation = list(range(1, self.metadata.current_generation, 1))
         for metric in metrics:
             if metric == 'best_fitness':
-                plt.plot(list(range(1, self.current_generation + 1)), self.best_score_progress, label = metric)
+                plt.plot(ticks_generation,
+                         np.max(np.array(self.metadata.fitnessss), axis=1), label=metric)
             if metric == 'average_fitness':
-                average_fitness = (np.mean(self.fitnesss))
-                plt.plot(list(range(1, self.current_generation + 1)), average_fitness, label = metric)
+                plt.plot(ticks_generation,
+                         np.mean(np.array(self.metadata.fitnessss), axis=1), label=metric)
         plt.legend()
         plt.xlabel('No. generation')
         plt.show()
         return
+
+    @staticmethod
+    def load(file_name: str, fitness_func: types.FunctionType):
+        file = pathlib.Path(file_name)
+        if file.is_dir():
+            funcs = json.load(open(os.path.join(file_name, 'funcs.json')))
+            metadata = json.load(
+                open(os.path.join(file_name, 'metadata.json')))
+            env = EEnvironment(
+                metadata=metadata,
+                crossover_func=getattr(crossover, funcs['crossover_func']),
+                mutate_func=getattr(mutate, funcs['mutate_func']),
+                selection_func=getattr(selection, funcs['selection_func']),
+                threshold_func=getattr(threshold, funcs['threshold_func'])
+            )
+            env.circuitss = [[0 for _ in range(env.metadata.num_circuit)] for _ in range(
+                env.metadata.current_generation)]
+            for i in range(0, env.metadata.current_generation):
+                for j in range(env.metadata.num_circuit):
+                    env.circuitss[i][j] = utilities.load_circuit(os.path.join(file_name, f'circuit_{i + 1}_{j}'))
+            env.set_fitness_func(fitness_func)
+            env.set_circuits(env.circuitss[-1])
+            env.best_circuit = utilities.load_circuit((os.path.join(file_name, 'best_circuit')))
+        else:
+            raise TypeError("Please input a path to json file or qsp folder")
+        return env
+
     def save(self, file_name: str = ''):
         """Save as envobj file at a specific path
 
@@ -270,28 +294,26 @@ class EEnvironment():
         """
         if not os.path.exists(file_name):
             os.mkdir(file_name)
-        metadata = {
-            'num_qubits': self.num_qubits,
-            'depth': self.depth,
-            'num_circuit': self.num_circuit ,
-            'num_generation': self.num_generation ,
+
+        funcs = {
             'fitness_func': self.fitness_func.__name__,
             'crossover_func': self.crossover_func.__name__,
             'mutate_func': self.mutate_func.__name__,
             'selection_func': self.selection_func.__name__,
-            'fitnessss': self.fitnessss,
-            'best_score_progress': self.best_score_progress,
-            'current_generation': self.current_generation,
-            'prob_mutate': self.prob_mutate,
-            'threshold': self.threshold.__name__
+            'threshold_func': self.threshold_func.__name__
         }
-        with open(f"{os.path.join(file_name, 'info')}.json", "w") as file:
-            json.dump(metadata, file)
-        for i, population in enumerate(self.populations):
-            for j, circuit in enumerate(population):
+        with open(f"{os.path.join(file_name, 'metadata')}.json", "w") as file:
+            json.dump(vars(self.metadata), file)
+        with open(f"{os.path.join(file_name, 'funcs')}.json", "w") as file:
+            json.dump(funcs, file)
+        for i in range(0, self.metadata.current_generation):
+            for j in range(self.metadata.num_circuit):
                 utilities.save_circuit(
-                    qc = circuit.qc, 
-                    file_name = os.path.join(file_name, f'circuit_{i}_{j}')
+                    qc=self.circuitss[i][j],
+                    file_name=os.path.join(file_name, f'circuit_{i + 1}_{j}')
                 )
+        utilities.save_circuit(
+            qc=self.best_circuit,
+            file_name=os.path.join(file_name, f'best_circuit')
+        )
         return
-        
