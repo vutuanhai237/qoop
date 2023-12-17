@@ -470,6 +470,10 @@ def compose_circuit(qcs: typing.List[qiskit.QuantumCircuit]) -> qiskit.QuantumCi
                 i += 2
             qc.append(instruction[0], instruction[1])
     return qc
+
+def normalize_circuit(qc: qiskit.QuantumCircuit) -> qiskit.QuantumCircuit:    
+    return compose_circuit([qc])
+
 def find_nearest(xs: typing.List, x):
     xs = np.asarray(xs)
     idx = (np.abs(xs - x)).argmin()

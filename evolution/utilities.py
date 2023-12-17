@@ -2,7 +2,7 @@ import typing
 import qiskit
 import random
 import numpy as np
-
+from ..backend import utilities
 def fight(population):
     circuits = random.sample(population, 2)
     return circuits[0] if circuits[0].fitness > circuits[1].fitness else circuits[1]

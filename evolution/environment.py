@@ -61,7 +61,7 @@ class EEnvironment():
     """
 
     def __init__(self, metadata: EEnvironmentMetadata | dict,
-                 fitness_func: types.FunctionType = None,
+                 fitness_func: typing.List[types.FunctionType] = [],
                  crossover_func: types.FunctionType = crossover.onepoint_crossover,
                  mutate_func: types.FunctionType = mutate.bitflip_mutate,
                  selection_func: types.FunctionType = selection.elitist_selection,
@@ -80,7 +80,16 @@ class EEnvironment():
         """
 
         self.metadata = metadata
-        self.fitness_func = fitness_func
+        if callable(fitness_func):
+            self.fitness_func = fitness_func
+        elif len(fitness_func) == 1:
+            self.fitness_func = fitness_func
+        elif len(fitness_func) == 2:
+            self.fitness_func = fitness_func[0]
+            self.fitness_full_func = fitness_func[1]
+        else:
+            self.fitness_func = None
+ 
         self.crossover_func = crossover_func
         self.mutate_func = mutate_func
         self.selection_func = selection_func
@@ -116,7 +125,7 @@ class EEnvironment():
         self.circuits: typing.List[qiskit.QuantumCircuit] = circuits
         return
 
-    def evol(self, verbose: int = 0):
+    def evol(self, verbose: int = 0, auto_save: bool = True):
         if verbose == 1:
             bar = utilities.ProgressBar(
                 max_value=self.metadata.num_generation, disable=False)
@@ -143,18 +152,26 @@ class EEnvironment():
             for i in range(len(self.circuits)):
                 self.fitnesss.append(self.fitness_func(self.circuits[i]))
             print(self.fitnesss)
-            if generation > 0:
-                self.metadata.fitnessss.append(self.fitnesss)
+            # if generation > 0:
+            self.metadata.fitnessss.append(self.fitnesss)
+            
             #####################
             #### Threshold ######
             #####################
             if self.best_circuit is None or self.fitness_func(self.best_circuit) < np.max(self.fitnesss):
                 self.best_circuit = self.circuits[np.argmax(self.fitnesss)]
                 self.best_fitness = np.max(self.fitnesss)
-                if self.threshold_func(self.best_fitness):
-                    print(
-                        f'End evol progress soon at generation {self.metadata.current_generation}, best score ever: {self.best_fitness}')
-                    return
+                if hasattr(self, 'fitness_full_func'):
+                    full_best_fitness = self.fitness_full_func(self.best_circuit)
+                    if self.threshold_func(full_best_fitness):
+                        print(
+                            f'End evol progress soon at generation {self.metadata.current_generation}, best score ever: {full_best_fitness}')
+                        return
+                else:
+                    if self.threshold_func(self.best_fitness):
+                        print(
+                            f'End evol progress soon at generation {self.metadata.current_generation}, best score ever: {self.best_fitness}')
+                        return
 
             #####################
             ##### Selection #####
@@ -181,12 +198,16 @@ class EEnvironment():
             ##### Mutation #####
             ####################
             for i in range(0, len(new_circuits)):
-                if random.random() < self.metadata.prob_mutate:
-                    print('Mutate')
-                    new_circuits[i] = self.mutate_func(new_circuits[i])
+                # new_circuits[i] = random_circuit.generate_with_pool(self.metadata.num_qubits, self.metadata.depth)
+                new_circuits[i] = self.mutate_func(new_circuits[i], self.metadata.prob_mutate)
+                
+            #####################
+            ##### Post-process ##
+            #####################
             self.circuits = new_circuits
             self.circuitss.append(new_circuits)
-            # self.save(self.file_name + f'ga_{self.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}.envobj')
+            if auto_save:
+                self.save(f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}')
             if verbose == 1:
                 bar.update(1)
             if verbose == 2 and generation % 5 == 0:

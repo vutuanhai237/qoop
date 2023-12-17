@@ -2,24 +2,68 @@ import qiskit
 import random
 from ..backend import utilities, constant
 from ..core import random_circuit
-from .ecircuit import ECircuit
 
-def bitflip_mutate(qc: qiskit.QuantumCircuit, pool = constant.operations, is_truncate=True) -> ECircuit:
-    """Mutate circuit to other.
+def specific_mutate(qc: qiskit.QuantumCircuit, index: int) -> qiskit.QuantumCircuit:
+    """Replace a quantum gate at specific index by another
 
     Args:
-        circuit (qsee.evolution.eECircuit)
-        pool (_type_): Selected gates
-        is_truncate (bool, optional): If it's true, make the circuit depth into default. Defaults to True.
+        - qc (qiskit.QuantumCircuit): input circuit
+        - index (int): from 0 to num_gate - 1
 
     Returns:
-        qsee.evolution.eECircuit: Mutatant
+        - qiskit.QuantumCircuit: Bit flipped circut
+    """
+    while (True):
+        new_gate = random.choice(constant.operations)
+        if new_gate['num_params'] == 0:
+            gate = new_gate['operation']()
+        elif new_gate['num_params'] == 1:
+            gate = new_gate['operation'](qiskit.circuit.Parameter(f'{index}'))
+        else:
+            gate = new_gate['operation'](qiskit.circuit.ParameterVector(f'{index}', new_gate['num_params']))
+        if gate.num_qubits == qc.data[index].operation.num_qubits:
+            break
+    target_qubits = qc.data[index][1]
+    if gate.num_qubits == 1:
+        qc.data[index] = (gate, [target_qubits[0]], [])
+    elif gate.num_qubits == 2:
+        qc.data[index] = (gate, [target_qubits[0], target_qubits[1]] if len(target_qubits) > 1 else [target_qubits[0]], [])
+    return qc
+
+def bitflip_mutate(qc: qiskit.QuantumCircuit, prob_mutate: float = 0.1) -> qiskit.QuantumCircuit:
+    """Mutate at every position in circuit with probability = prob_mutate
+
+    Args:
+        - qc (qiskit.QuantumCircuit): Input circuit
+        - prob_mutate (float, optional): Mutate probability. Defaults to 0.1.
+
+    Returns:
+        - qiskit.QuantumCircuit: Bit flipped circuit
+    """
+    num_gates = len(qc.data)
+    for index in range(0, num_gates):
+        if random.random() < prob_mutate:
+            qc = specific_mutate(qc, index = index)  
+    # qc = utilities.normalize_circuit(qc)
+    return qc
+
+
+def layerflip_mutate(qc: qiskit.QuantumCircuit, prob_mutate: float = 0.1) -> qiskit.QuantumCircuit:
+    """Mutate qc to other.
+
+    Args:
+        qc (qsee.evolution.eEqc)
+        is_truncate (bool, optional): If it's true, make the qc depth into default. Defaults to True.
+
+    Returns:
+        qsee.evolution.eEqc: Mutatant
     """
     standard_depth = qc.depth()
-    qc1, qc2 = utilities.divide_circuit_by_depth(qc, random.randint(0, standard_depth - 1))
-    qc21, qc22 = utilities.divide_circuit_by_depth(qc2, 1)
-    genome = random_circuit.generate_with_pool(qc.num_qubits, 1, pool)
-    new_qc = utilities.compose_circuit([qc1, genome, qc22])
-    if is_truncate:
-        new_qc = utilities.truncate_circuit(new_qc.copy(), standard_depth)
-    return new_qc
+    for index in range(0, standard_depth):
+        if random.random() < prob_mutate:
+            qc1, qc2 = utilities.divide_circuit_by_depth(qc, index)
+            qc21, qc22 = utilities.divide_circuit_by_depth(qc2, 1)
+            genome = random_circuit.generate_with_pool(qc.num_qubits, 1)
+            qc = utilities.compose_circuit([qc1, genome, qc22])
+            qc = utilities.truncate_circuit(qc.copy(), standard_depth)
+    return qc
