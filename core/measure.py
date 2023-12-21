@@ -2,73 +2,73 @@ import qiskit
 import qiskit.quantum_info as qi
 import numpy as np, typing, types
 from qiskit.primitives import Sampler
-from qiskit.providers.aer import noise
-from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
+# from qiskit.providers.aer import noise
+# from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
 from ..backend import constant
 
 
-def generate_depolarizing_noise_model(prob: float) -> noise.NoiseModel:
-    """As its function name
+# def generate_depolarizing_noise_model(prob: float) -> noise.NoiseModel:
+#     """As its function name
 
-    Args:
-        - prob (float): from 0 to 1
+#     Args:
+#         - prob (float): from 0 to 1
 
-    Returns:
-        - qiskit.providers.aer.noise.NoiseModel: new noise model
-    """
-    prob_1 = prob  # 1-qubit gate
-    prob_2 = prob  # 2-qubit gate
+#     Returns:
+#         - qiskit.providers.aer.noise.NoiseModel: new noise model
+#     """
+#     prob_1 = prob  # 1-qubit gate
+#     prob_2 = prob  # 2-qubit gate
 
-    # Depolarizing quantum errors
-    error_1 = noise.depolarizing_error(prob_1, 1)
-    error_2 = noise.depolarizing_error(prob_2, 2)
+#     # Depolarizing quantum errors
+#     error_1 = noise.depolarizing_error(prob_1, 1)
+#     error_2 = noise.depolarizing_error(prob_2, 2)
 
-    # Add errors to noise model
-    noise_model = noise.NoiseModel()
-    noise_model.add_all_qubit_quantum_error(error_1, ['u1', 'u2', 'u3'])
-    noise_model.add_all_qubit_quantum_error(
-        error_2, ['cx', 'cz', 'crx', 'cry', 'crz'])
-    return noise_model
-
-
-def generate_noise_model(num_qubit: int, error_prob: float) -> noise.NoiseModel:
-    """Create readout noise model
-
-    Args:
-        - num_qubit (int): number of qubit
-        - error_prob (float):from 0 to 1
-
-    Returns:
-        - qiskit.providers.aer.noise.NoiseModel: new noise model
-    """
-    noise_model = noise.NoiseModel()
-    for qi in range(num_qubit):
-        read_err = noise.errors.readout_error.ReadoutError(
-            [[1 - error_prob, error_prob], [error_prob, 1 - error_prob]])
-        noise_model.add_readout_error(read_err, [qi])
-    return noise_model
+#     # Add errors to noise model
+#     noise_model = noise.NoiseModel()
+#     noise_model.add_all_qubit_quantum_error(error_1, ['u1', 'u2', 'u3'])
+#     noise_model.add_all_qubit_quantum_error(
+#         error_2, ['cx', 'cz', 'crx', 'cry', 'crz'])
+#     return noise_model
 
 
-def generate_measurement_filter(num_qubits: int, noise_model) -> CompleteMeasFitter:
-    """_summary_
+# def generate_noise_model(num_qubit: int, error_prob: float) -> noise.NoiseModel:
+#     """Create readout noise model
 
-    Args:
-        - num_qubits (int)
-        - noise_model
+#     Args:
+#         - num_qubit (int): number of qubit
+#         - error_prob (float):from 0 to 1
 
-    Returns:
-        - CompleteMeasFitter
-    """
-    # for running measurement error mitigation
-    meas_cals, state_labels = complete_meas_cal(qubit_list=range(
-        num_qubits), qr=qiskit.QuantumRegister(num_qubits))
-    # Execute the calibration circuits
-    job = qiskit.execute(meas_cals, backend=constant.backend,
-                         shots=constant.NUM_SHOTS, noise_model=noise_model)
-    cal_results = job.result()
-    # Make a calibration matrix
-    meas_filter = CompleteMeasFitter(cal_results, state_labels).filter
-    return meas_filter
+#     Returns:
+#         - qiskit.providers.aer.noise.NoiseModel: new noise model
+#     """
+#     noise_model = noise.NoiseModel()
+#     for qi in range(num_qubit):
+#         read_err = noise.errors.readout_error.ReadoutError(
+#             [[1 - error_prob, error_prob], [error_prob, 1 - error_prob]])
+#         noise_model.add_readout_error(read_err, [qi])
+#     return noise_model
+
+
+# def generate_measurement_filter(num_qubits: int, noise_model) -> CompleteMeasFitter:
+#     """_summary_
+
+#     Args:
+#         - num_qubits (int)
+#         - noise_model
+
+#     Returns:
+#         - CompleteMeasFitter
+#     """
+#     # for running measurement error mitigation
+#     meas_cals, state_labels = complete_meas_cal(qubit_list=range(
+#         num_qubits), qr=qiskit.QuantumRegister(num_qubits))
+#     # Execute the calibration circuits
+#     job = qiskit.execute(meas_cals, backend=constant.backend,
+#                          shots=constant.NUM_SHOTS, noise_model=noise_model)
+#     cal_results = job.result()
+#     # Make a calibration matrix
+#     meas_filter = CompleteMeasFitter(cal_results, state_labels).filter
+#     return meas_filter
 
 
 def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray, mode: str = 'simulate'):
