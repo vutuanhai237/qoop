@@ -268,7 +268,7 @@ class EEnvironment():
         """Plot number of generation versus best score of each generation
         Example: ['best_fitness','average_fitness']
         """
-        ticks_generation = list(range(1, self.metadata.current_generation, 1))
+        ticks_generation = list(range(1, self.metadata.current_generation + 1, 1))
         for metric in metrics:
             if metric == 'best_fitness':
                 plt.plot(ticks_generation,

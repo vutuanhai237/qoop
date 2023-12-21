@@ -254,7 +254,10 @@ def specific(state: np.ndarray) -> qiskit.QuantumCircuit:
     Returns:
         qiskit.QuantumCircuit
     """
-    num_qubits = int(np.log2(state.shape[0]))
+    if isinstance(state, np.ndarray):
+        num_qubits = int(np.log2(state.shape[0]))
+    elif isinstance(state, list):
+        num_qubits = int(np.log2(len(state)))    
     qc = qiskit.QuantumCircuit(num_qubits)
     state = state / np.linalg.norm(state)
     qc.prepare_state(state, list(range(0, num_qubits)))
