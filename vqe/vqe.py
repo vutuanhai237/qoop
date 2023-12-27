@@ -7,7 +7,7 @@ from qiskit.primitives import Estimator
 from qiskit_algorithms.utils import algorithm_globals
 from qiskit.algorithms.optimizers import SLSQP
 
-def VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
+def general_VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
 
     
     driver = PySCFDriver(

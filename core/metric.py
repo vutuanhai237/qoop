@@ -129,34 +129,34 @@ def compilation_trace_fidelity(rho, sigma) -> float:
     )
 
 
-# def gibbs_trace_fidelity(rho, sigma) -> float | None:
-#     """Calculating the fidelity metric
+def gibbs_trace_fidelity(rho, sigma) -> float | None:
+    """Calculating the fidelity metric
 
-#     Args:
-#         - rho (DensityMatrix): first density matrix
-#         - sigma (DensityMatrix): second density matrix
+    Args:
+        - rho (DensityMatrix): first density matrix
+        - sigma (DensityMatrix): second density matrix
 
-#     Returns:
-#         - float: trace metric has value from 0 to 1
-#     """
-#     if rho is None:
-#         return None
-#     half_power_sigma = scipy.linalg.fractional_matrix_power(sigma, 1 / 2)
-#     return np.trace(scipy.linalg.sqrtm(half_power_sigma @ rho.data @ half_power_sigma))
+    Returns:
+        - float: trace metric has value from 0 to 1
+    """
+    if rho is None:
+        return None
+    half_power_sigma = scipy.linalg.fractional_matrix_power(sigma, 1 / 2)
+    return np.trace(scipy.linalg.sqrtm(half_power_sigma @ rho.data @ half_power_sigma))
 
 
-# def gibbs_trace_distance(rho) -> float | None:
-#     """Calculate trace distance
+def gibbs_trace_distance(rho) -> float | None:
+    """Calculate trace distance
 
-#     Args:
-#         - rho (DensityMatrix)
+    Args:
+        - rho (DensityMatrix)
 
-#     Returns:
-#         - float: trace metric has value from 0 to 1
-#     """
-#     if rho is None:
-#         return None
-#     return np.trace(np.linalg.matrix_power(rho, 2))
+    Returns:
+        - float: trace metric has value from 0 to 1
+    """
+    if rho is None:
+        return None
+    return np.trace(np.linalg.matrix_power(rho, 2))
 
 
 def calculate_premetric(
@@ -185,74 +185,74 @@ def calculate_premetric(
     return qc, rho, sigma
 
 
-# def gibbs_metrics(
-#     u: qiskit.QuantumCircuit,
-#     vdagger: qiskit.QuantumCircuit,
-#     thetass: typing.List[np.ndarray],
-# ) -> typing.Tuple | None:
-#     """Calculate gibbs metric through list of thetas
+def gibbs_metrics(
+    u: qiskit.QuantumCircuit,
+    vdagger: qiskit.QuantumCircuit,
+    thetass: typing.List[np.ndarray],
+) -> typing.Tuple | None:
+    """Calculate gibbs metric through list of thetas
 
-#     Args:
-#         - u (qiskit.QuantumCircuit)
-#         - vdagger (qiskit.QuantumCircuit)
-#         - thetass (typing.List[np.ndarray]): list of parameters
-#         - gibbs (bool, optional): Defaults to False.
+    Args:
+        - u (qiskit.QuantumCircuit)
+        - vdagger (qiskit.QuantumCircuit)
+        - thetass (typing.List[np.ndarray]): list of parameters
+        - gibbs (bool, optional): Defaults to False.
 
-#     Returns:
-#         - tuple: including gibbs_traces, gibbs_fidelities
-#     """
-#     gibbs_traces = []
-#     gibbs_fidelities = []
-#     for thetas in thetass:
-#         _, rho, sigma = calculate_premetric(u, vdagger, thetas)
-#         gibbs_rho = qi.partial_trace(rho, [0, 1])
-#         gibbs_sigma = qi.partial_trace(sigma, [0, 1])
-#         gibbs_trace = gibbs_trace_distance(gibbs_rho)
-#         gibbs_fidelity = gibbs_trace_fidelity(gibbs_rho, gibbs_sigma)
-#         gibbs_traces.append(gibbs_trace)
-#         gibbs_fidelities.append(gibbs_fidelity)
-#         return gibbs_traces, gibbs_fidelities
-
-
-# def gibbs_trace_distances(
-#     u: qiskit.QuantumCircuit,
-#     vdagger: qiskit.QuantumCircuit,
-#     thetass: typing.List[np.ndarray],
-# ) -> typing.List:
-#     """Calculate gibbs metric through list of thetas
-
-#     Args:
-#         - u (qiskit.QuantumCircuit)
-#         - vdagger (qiskit.QuantumCircuit)
-#         - thetass (typing.List[np.ndarray]): list of parameters
-#         - gibbs (bool, optional): Defaults to False.
-
-#     Returns:
-#         - tuple: including gibbs_traces, gibbs_fidelities
-#     """
-#     gibbs_traces = []
-#     for thetas in thetass:
-#         _, rho, sigma = calculate_premetric(u, vdagger, thetas)
-#         gibbs_rho = qi.partial_trace(rho, [0, 1])
-#         gibbs_sigma = qi.partial_trace(sigma, [0, 1])
-#         gibbs_trace = gibbs_trace_distance(gibbs_rho)
-#         gibbs_traces.append(gibbs_trace)
-#     return gibbs_traces
+    Returns:
+        - tuple: including gibbs_traces, gibbs_fidelities
+    """
+    gibbs_traces = []
+    gibbs_fidelities = []
+    for thetas in thetass:
+        _, rho, sigma = calculate_premetric(u, vdagger, thetas)
+        gibbs_rho = qi.partial_trace(rho, [0, 1])
+        gibbs_sigma = qi.partial_trace(sigma, [0, 1])
+        gibbs_trace = gibbs_trace_distance(gibbs_rho)
+        gibbs_fidelity = gibbs_trace_fidelity(gibbs_rho, gibbs_sigma)
+        gibbs_traces.append(gibbs_trace)
+        gibbs_fidelities.append(gibbs_fidelity)
+        return gibbs_traces, gibbs_fidelities
 
 
-# def gibbs_trace_fidelities(
-#     u: qiskit.QuantumCircuit,
-#     vdagger: qiskit.QuantumCircuit,
-#     thetass: typing.List[np.ndarray],
-# ) -> typing.List:
-#     gibbs_fidelities = []
-#     for thetas in thetass:
-#         _, rho, sigma = calculate_premetric(u, vdagger, thetas)
-#         gibbs_rho = qi.partial_trace(rho, [0, 1])
-#         gibbs_sigma = qi.partial_trace(sigma, [0, 1])
-#         gibbs_fidelity = gibbs_trace_fidelity(gibbs_rho, gibbs_sigma)
-#         gibbs_fidelities.append(gibbs_fidelity)
-#     return gibbs_fidelities
+def gibbs_trace_distances(
+    u: qiskit.QuantumCircuit,
+    vdagger: qiskit.QuantumCircuit,
+    thetass: typing.List[np.ndarray],
+) -> typing.List:
+    """Calculate gibbs metric through list of thetas
+
+    Args:
+        - u (qiskit.QuantumCircuit)
+        - vdagger (qiskit.QuantumCircuit)
+        - thetass (typing.List[np.ndarray]): list of parameters
+        - gibbs (bool, optional): Defaults to False.
+
+    Returns:
+        - tuple: including gibbs_traces, gibbs_fidelities
+    """
+    gibbs_traces = []
+    for thetas in thetass:
+        _, rho, sigma = calculate_premetric(u, vdagger, thetas)
+        gibbs_rho = qi.partial_trace(rho, [0, 1])
+        gibbs_sigma = qi.partial_trace(sigma, [0, 1])
+        gibbs_trace = gibbs_trace_distance(gibbs_rho)
+        gibbs_traces.append(gibbs_trace)
+    return gibbs_traces
+
+
+def gibbs_trace_fidelities(
+    u: qiskit.QuantumCircuit,
+    vdagger: qiskit.QuantumCircuit,
+    thetass: typing.List[np.ndarray],
+) -> typing.List:
+    gibbs_fidelities = []
+    for thetas in thetass:
+        _, rho, sigma = calculate_premetric(u, vdagger, thetas)
+        gibbs_rho = qi.partial_trace(rho, [0, 1])
+        gibbs_sigma = qi.partial_trace(sigma, [0, 1])
+        gibbs_fidelity = gibbs_trace_fidelity(gibbs_rho, gibbs_sigma)
+        gibbs_fidelities.append(gibbs_fidelity)
+    return gibbs_fidelities
 
 
 def ces(
