@@ -165,6 +165,8 @@ class EEnvironment():
                 self.fitnesss.append(self.fitness_func(self.circuits[i]))
             self.metadata.best_fitnesss.append(np.max(self.fitnesss))
             self.best_circuits.append(self.circuits[np.argmax(self.fitnesss)])
+            if self.best_circuit is None:
+                self.best_circuit = self.best_circuits[0]
             print(self.fitnesss)
             # if generation > 0:
             self.metadata.fitnessss.append(self.fitnesss)
@@ -174,7 +176,7 @@ class EEnvironment():
             #####################
             #### Threshold ######
             #####################
-            if self.best_circuit is None or self.fitness_func(self.best_circuit) < np.max(self.fitnesss):
+            if self.fitness_func(self.best_circuit) < np.max(self.fitnesss):
                 self.best_circuit = self.circuits[np.argmax(self.fitnesss)]
                 self.best_fitness = np.max(self.fitnesss)
                 if hasattr(self, 'fitness_full_func'):
@@ -308,12 +310,15 @@ class EEnvironment():
             )
             env.circuitss = [[0 for _ in range(env.metadata.num_circuit)] for _ in range(
                 env.metadata.current_generation)]
+            env.best_circuits = [0]*(env.metadata.num_circuit)
             for i in range(0, env.metadata.current_generation):
+                env.best_circuits[i] = utilities.load_circuit(os.path.join(file_name, f'best_circuit_{i + 1}'))
                 for j in range(env.metadata.num_circuit):
                     env.circuitss[i][j] = utilities.load_circuit(os.path.join(file_name, f'circuit_{i + 1}_{j}'))
             env.set_fitness_func(fitness_func)
             env.set_circuits(env.circuitss[-1])
             env.best_circuit = utilities.load_circuit((os.path.join(file_name, 'best_circuit')))
+
         else:
             raise TypeError("Please input a path to env folder")
         return env
