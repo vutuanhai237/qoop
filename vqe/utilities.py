@@ -20,3 +20,4 @@ def similarity(float1: float, float2: float, decay_rate=0.2) -> float:
     difference = abs(float1 - float2)
     similarity = np.exp(-decay_rate * difference)
     return similarity
+

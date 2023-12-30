@@ -53,6 +53,7 @@ class EEnvironmentMetadata:
     num_generation: int
     current_generation: int = field(default_factory=lambda: 0)
     fitnessss: list = field(default_factory=lambda: [])
+    best_fitnesss: list = field(default_factory=lambda: [])
     prob_mutate: float = field(default_factory=lambda: 0.1)
 
 
@@ -104,12 +105,14 @@ class EEnvironment():
                 num_generation=metadata.get('num_generation', 0),
                 current_generation=metadata.get('current_generation', 0),
                 fitnessss=metadata.get('fitnessss', []),
+                best_fitnesss=metadata.get('best_fitnesss', []),
                 prob_mutate=metadata.get('prob_mutate', []),
             )
         self.fitnesss: list = []
         self.circuits: typing.List[ECircuit] = []
         self.circuitss: typing.List[typing.List[ECircuit]] = []
         self.best_circuit = None
+        self.best_circuits: typing.List[ECircuit] = []
         self.best_fitness = 0
         return
 
@@ -121,6 +124,10 @@ class EEnvironment():
         self.circuitss: typing.List[typing.List[qiskit.QuantumCircuit]] = circuitss
         return
 
+    def set_best_circuits(self, circuits):
+        self.best_circuits: typing.List[qiskit.QuantumCircuit] = circuits
+        return
+    
     def set_circuits(self, circuits):
         self.circuits: typing.List[qiskit.QuantumCircuit] = circuits
         return
@@ -143,6 +150,11 @@ class EEnvironment():
             ##### Pre-process ###
             #####################
             self.metadata.current_generation += 1
+            if verbose == 1:
+                bar.update(1)
+            if verbose == 2 and generation % 5 == 0:
+                print("Step " + str(generation) +
+                      ", best score: " + str(np.max(self.fitnesss)))
             print(f"Evol at generation {self.metadata.current_generation}")
             self.fitnesss = []
             #####################
@@ -151,9 +163,13 @@ class EEnvironment():
             # new_population = multiple_compile(new_population)
             for i in range(len(self.circuits)):
                 self.fitnesss.append(self.fitness_func(self.circuits[i]))
+            self.metadata.best_fitnesss.append(np.max(self.fitnesss))
+            self.best_circuits.append(self.circuits[np.argmax(self.fitnesss)])
             print(self.fitnesss)
             # if generation > 0:
             self.metadata.fitnessss.append(self.fitnesss)
+            if auto_save:
+                self.save(f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}')
             
             #####################
             #### Threshold ######
@@ -206,13 +222,7 @@ class EEnvironment():
             #####################
             self.circuits = new_circuits
             self.circuitss.append(new_circuits)
-            if auto_save:
-                self.save(f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}')
-            if verbose == 1:
-                bar.update(1)
-            if verbose == 2 and generation % 5 == 0:
-                print("Step " + str(generation) +
-                      ", best score: " + str(np.max(self.fitnesss)))
+            
 
         print(f'End evol progress, best score ever: {self.best_fitness}')
         return
@@ -229,6 +239,7 @@ class EEnvironment():
             if sastify_circuit(circuit):
                 num_sastify_circuit += 1
                 self.circuits.append(circuit)
+        self.circuitss.append(self.circuits)
         #         self.fitnesss.append(self.fitness_func(circuit))
         # self.circuitss.append(self.circuits)
         # self.metadata.fitnessss.append(self.fitnesss)
@@ -304,7 +315,7 @@ class EEnvironment():
             env.set_circuits(env.circuitss[-1])
             env.best_circuit = utilities.load_circuit((os.path.join(file_name, 'best_circuit')))
         else:
-            raise TypeError("Please input a path to json file or qsp folder")
+            raise TypeError("Please input a path to env folder")
         return env
 
     def save(self, file_name: str = ''):
@@ -333,8 +344,13 @@ class EEnvironment():
                     qc=self.circuitss[i][j],
                     file_name=os.path.join(file_name, f'circuit_{i + 1}_{j}')
                 )
-        utilities.save_circuit(
-            qc=self.best_circuit,
-            file_name=os.path.join(file_name, f'best_circuit')
-        )
+            utilities.save_circuit(
+                    qc=self.best_circuits[i],
+                    file_name=os.path.join(file_name, f'best_circuit_{i + 1}')
+                )
+        if self.best_circuit is not None:
+            utilities.save_circuit(
+                qc=self.best_circuit,
+                file_name=os.path.join(file_name, f'best_circuit')
+            )
         return
