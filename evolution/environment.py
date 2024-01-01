@@ -114,8 +114,13 @@ class EEnvironment():
         self.best_circuit = None
         self.best_circuits: typing.List[ECircuit] = []
         self.best_fitness = 0
+        self.file_name = None
         return
 
+    def set_filename(self, file_name: str):
+        self.file_name = file_name
+        return 
+    
     def set_fitness_func(self, fitness_func):
         self.fitness_func = fitness_func
         return
@@ -171,7 +176,10 @@ class EEnvironment():
             # if generation > 0:
             self.metadata.fitnessss.append(self.fitnesss)
             if auto_save:
-                self.save(f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}')
+                if self.file_name is not None:
+                    self.save(self.file_name)
+                else:
+                    self.save(f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}')
             
             #####################
             #### Threshold ######
@@ -310,8 +318,9 @@ class EEnvironment():
             )
             env.circuitss = [[0 for _ in range(env.metadata.num_circuit)] for _ in range(
                 env.metadata.current_generation)]
-            env.best_circuits = [0]*(env.metadata.num_circuit)
+            env.best_circuits = [0]*(env.metadata.current_generation)
             for i in range(0, env.metadata.current_generation):
+                print(i)
                 env.best_circuits[i] = utilities.load_circuit(os.path.join(file_name, f'best_circuit_{i + 1}'))
                 for j in range(env.metadata.num_circuit):
                     env.circuitss[i][j] = utilities.load_circuit(os.path.join(file_name, f'circuit_{i + 1}_{j}'))
