@@ -158,14 +158,15 @@ class EEnvironment():
             if verbose == 1:
                 bar.update(1)
             if verbose == 2 and generation % 5 == 0:
-                print("Step " + str(generation) +
+                print("Generation " + str(self.metadata.current_generation) +
                       ", best score: " + str(np.max(self.fitnesss)))
-            print(f"Evol at generation {self.metadata.current_generation}")
-            self.fitnesss = []
+            print(f"Running at generation {self.metadata.current_generation}")
+            
             #####################
             ######## Cost #######
             #####################
             # new_population = multiple_compile(new_population)
+            self.fitnesss = []
             for i in range(len(self.circuits)):
                 self.fitnesss.append(self.fitness_func(self.circuits[i]))
             self.metadata.best_fitnesss.append(np.max(self.fitnesss))
@@ -173,14 +174,9 @@ class EEnvironment():
             if self.best_circuit is None:
                 self.best_circuit = self.best_circuits[0]
             print(self.fitnesss)
-            # if generation > 0:
             self.metadata.fitnessss.append(self.fitnesss)
             if auto_save:
-                if self.file_name is not None:
-                    self.save(self.file_name)
-                else:
-                    self.save(f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}')
-            
+                self.save()
             #####################
             #### Threshold ######
             #####################
@@ -191,32 +187,25 @@ class EEnvironment():
                     full_best_fitness = self.fitness_full_func(self.best_circuit)
                     if self.threshold_func(full_best_fitness):
                         print(
-                            f'End evol progress soon at generation {self.metadata.current_generation}, best score ever: {full_best_fitness}')
+                            f'End progress soon at generation {self.metadata.current_generation}, best score ever: {full_best_fitness}')
                         return
                 else:
                     if self.threshold_func(self.best_fitness):
                         print(
-                            f'End evol progress soon at generation {self.metadata.current_generation}, best score ever: {self.best_fitness}')
+                            f'End progress soon at generation {self.metadata.current_generation}, best score ever: {self.best_fitness}')
                         return
 
             #####################
             ##### Selection #####
             #####################
             self.circuits = self.selection_func(self.circuits, self.fitnesss)
-            # random.shuffle(self.circuits)
             #####################
             ##### Cross-over ####
             #####################
             new_circuits: typing.List[ECircuit] = []
             for i in range(0, int(self.metadata.num_circuit/2), 2):
-                # print("Cross-over")
-                # print(self.circuits[i].draw())
-                # print(self.circuits[i + 1].draw())
                 offspring1, offspring2 = self.crossover_func(
                     self.circuits[i], self.circuits[i + 1])
-                # print("Child")
-                # print(offspring1.draw())
-                # print(offspring2.draw())
                 new_circuits.extend(
                     [self.circuits[i], self.circuits[i + 1], offspring1, offspring2])
 
@@ -224,7 +213,6 @@ class EEnvironment():
             ##### Mutation #####
             ####################
             for i in range(0, len(new_circuits)):
-                # new_circuits[i] = random_circuit.generate_with_pool(self.metadata.num_qubits, self.metadata.depth)
                 new_circuits[i] = self.mutate_func(new_circuits[i], self.metadata.prob_mutate)
                 
             #####################
@@ -232,7 +220,8 @@ class EEnvironment():
             #####################
             self.circuits = new_circuits
             self.circuitss.append(new_circuits)
-            
+            if auto_save:
+                self.save()      
 
         print(f'End evol progress, best score ever: {self.best_fitness}')
         return
@@ -249,12 +238,7 @@ class EEnvironment():
             if sastify_circuit(circuit):
                 num_sastify_circuit += 1
                 self.circuits.append(circuit)
-        self.circuitss.append(self.circuits)
-        #         self.fitnesss.append(self.fitness_func(circuit))
         # self.circuitss.append(self.circuits)
-        # self.metadata.fitnessss.append(self.fitnesss)
-        # self.best_circuit = self.circuits[np.argmax(self.fitnesss)]
-        # self.best_fitness = np.max(self.fitnesss)
         return
 
     def set_num_generation(self, num_generation: int) -> None:
@@ -320,7 +304,6 @@ class EEnvironment():
                 env.metadata.current_generation)]
             env.best_circuits = [0]*(env.metadata.current_generation)
             for i in range(0, env.metadata.current_generation):
-                print(i)
                 env.best_circuits[i] = utilities.load_circuit(os.path.join(file_name, f'best_circuit_{i + 1}'))
                 for j in range(env.metadata.num_circuit):
                     env.circuitss[i][j] = utilities.load_circuit(os.path.join(file_name, f'circuit_{i + 1}_{j}'))
@@ -331,13 +314,36 @@ class EEnvironment():
         else:
             raise TypeError("Please input a path to env folder")
         return env
+    def draw(self, file_name: str = None):
+        fig, ax = plt.subplots(len(self.circuitss),self.metadata.num_circuit)
+        for i in range(0, len(self.circuitss)):
+            for j in range(self.metadata.num_circuit):
+                self.circuitss[i][j].draw('mpl', ax=ax[i][j])
+        if file_name is not None:
+            plt.savefig(f'{file_name}.png', dpi = 1000)
+        plt.show()
+        return  
 
+    def draw_best_circuit(self, file_name: str = None):
+        fig, ax = plt.subplots(1, len(self.circuitss))
+        for i in range(0, len(self.best_circuits)):
+            self.best_circuits[i].draw('mpl', ax=ax[i])
+        if file_name is not None:
+            plt.savefig(f'{file_name}.png', dpi = 1000)
+        plt.show()
+        return  
+    
     def save(self, file_name: str = ''):
         """Save as envobj file at a specific path
 
         Args:
             file_name (str): Path
         """
+        if self.file_name is not None:
+            file_name = self.file_name
+        else:
+            file_name = f'{self.metadata.num_qubits}qubits_{self.fitness_func.__name__}_{datetime.datetime.now().strftime("%Y-%m-%d")}'
+    
         if not os.path.exists(file_name):
             os.mkdir(file_name)
 
@@ -352,12 +358,14 @@ class EEnvironment():
             json.dump(vars(self.metadata), file)
         with open(f"{os.path.join(file_name, 'funcs')}.json", "w") as file:
             json.dump(funcs, file)
-        for i in range(0, self.metadata.current_generation):
+        print(f"Saving circuit ...{len(self.circuitss)}")
+        for i in range(0, len(self.circuitss)):
             for j in range(self.metadata.num_circuit):
                 utilities.save_circuit(
                     qc=self.circuitss[i][j],
                     file_name=os.path.join(file_name, f'circuit_{i + 1}_{j}')
                 )
+        for i in range(0, len(self.best_circuits)):
             utilities.save_circuit(
                     qc=self.best_circuits[i],
                     file_name=os.path.join(file_name, f'best_circuit_{i + 1}')
