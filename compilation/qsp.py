@@ -50,8 +50,8 @@ class QuantumStatePreparation:
         self.qc = self.u.assign_parameters(self.thetas)
         return self
     
-    def plot(self):
-        self.compiler.plot()
+    def plot(self, filename):
+        self.compiler.plot(filename)
         return
     
     def fit(self, num_steps: int = 100, verbose: int = 0, **kwargs):

@@ -74,6 +74,7 @@ four_term_psr = {
     'd_minus': (np.sqrt(2) - 1) / (4*np.sqrt(2))
 }
 
+
 one_qubit_gates = ["Hadamard", 'RX', 'RY', 'RZ']
 two_qubits_gates = ['CNOT', 'CY', 'CZ', 'CRX', 'CRY', 'CRZ']
 
