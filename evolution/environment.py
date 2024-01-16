@@ -358,7 +358,7 @@ class EEnvironment():
             json.dump(vars(self.metadata), file)
         with open(f"{os.path.join(file_name, 'funcs')}.json", "w") as file:
             json.dump(funcs, file)
-        print(f"Saving circuit ...{len(self.circuitss)}")
+        print(f"Saving circuit ...")
         for i in range(0, len(self.circuitss)):
             for j in range(self.metadata.num_circuit):
                 utilities.save_circuit(

@@ -71,7 +71,7 @@ from ..backend import constant
 #     return meas_filter
 
 
-def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray, mode: str = 'simulate'):
+def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode: str = 'theory'):
     """Measuring the quantu circuit which fully measurement gates
 
     Args:
@@ -81,15 +81,18 @@ def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray, mode: str =
     Returns:
         - float: Frequency of 00.. cbit
     """
-    if mode == constant.MeasureMode.THEORY.value:
-        print(qc)
-        print(parameter_values)
-        operator = qi.DensityMatrix(qc.assign_parameters(parameter_values)).data
-        result = np.real(operator[0][0])
-    elif mode == constant.MeasureMode.SIMULATE.value:
+    if len(parameter_values) == 0:
         qc.measure_all()
         sampler = Sampler()
-        result = sampler.run(qc, parameter_values=parameter_values, shots = 10000).result().quasi_dists[0].get(0, 0)
+        result = sampler.run(qc, shots = 10000).result().quasi_dists[0].get(0, 0)
+    else:
+        if mode == constant.MeasureMode.THEORY.value:
+            operator = qi.DensityMatrix(qc.assign_parameters(parameter_values)).data
+            result = np.real(operator[0][0])
+        elif mode == constant.MeasureMode.SIMULATE.value:
+            qc.measure_all()
+            sampler = Sampler()
+            result = sampler.run(qc, parameter_values=parameter_values, shots = 10000).result().quasi_dists[0].get(0, 0)
     return result
     # The below is old version
     # n = len(qubits)
