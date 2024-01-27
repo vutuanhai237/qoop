@@ -8,8 +8,6 @@ from qiskit_algorithms.utils import algorithm_globals
 from qiskit.algorithms.optimizers import SLSQP
 
 def general_VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
-
-    
     driver = PySCFDriver(
         atom=atom,
         basis=basis,
@@ -19,7 +17,7 @@ def general_VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
     )
     problem = driver.run()
     hamiltonian = problem.hamiltonian.second_q_op()
-    optimizer = SLSQP(maxiter=40)
+    optimizer = SLSQP(maxiter=1000)
     estimator = Estimator()
     algorithm_globals.random_seed = 50
     mapper=JordanWignerMapper()
@@ -27,3 +25,20 @@ def general_VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
     vqe = VQE(estimator = estimator, ansatz = qc, optimizer=optimizer)
     computation_value = vqe.compute_minimum_eigenvalue(qubit_op).eigenvalue.real
     return computation_value
+
+
+V = V_optimal
+risks = []
+for u in u_test:
+    risk = abc(V)
+    risks.append(risk)
+
+risk = np.mean(risks) * 1/4
+=> ríks =?
+
+=> thetas_optimal_C
+
+Tính risk
+
+=> thetas_optimal_R1
+
