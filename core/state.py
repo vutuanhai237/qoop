@@ -392,23 +392,37 @@ def ame_fake(num_qubits: int) -> qiskit.QuantumCircuit:
     return specific(amplitude_state)
 
 
-def calculate_hamiltonian(num_qubits: int) -> qiskit.QuantumCircuit:
-    labels = ["XI", "IX", "ZZ", "ZZ"]
-    coeffs = [1, 1, 1, 1]
-    spo = qiskit.quantum_info.SparsePauliOp(labels, coeffs)
-    return spo.to_matrix()
+def calculate_hamiltonian(num_qubits):
+    # pauli_x = np.array([[0,1],[1,0]])
+    # pauli_z = np.array([[1,0],[0,-1]])
+    # identity = np.array([[1,0],[0,1]])
+    if num_qubits == 1:
+        labels = ["X","Z"]
+        coeffs = [1]*2
+    if num_qubits == 2:
+        labels = ["XI", "IX","ZZ","ZZ"]
+        coeffs = [1]*4
+    if num_qubits == 3:
+        labels = ["XII", "IXI","IIX","ZZI","IZZ","ZIZ"]
+        coeffs = [1]*6
+    if num_qubits == 4:
+        labels = ["XIII", "IXII","IIXI","IIIX","ZZII","IZZI","IIZZ","ZIIZ"]
+        coeffs = [1,1,1,1,1,1,1,1]
+    if num_qubits == 5:
+        labels = ["XIIII", "IXIII","IIXII","IIIXI","IIIIX","ZZIII","IZZII","IIZZI","IIIZZ","ZIIIZ"]
+        coeffs = [1]*10
+    if num_qubits == 6:
+        labels = ["XIIIII", "IXIIII","IIXIII","IIIXII","IIIIXI","IIIIIX","ZZIIII","IZZIII","IIZZII","IIIZZI","IIIIZZ","ZIIIIZ"]
+        coeffs = [1]*12
+    spo = qiskit.quantum_info.SparsePauliOp(labels,coeffs)
+    return spo.to_matrix() 
 
 # Calculating the eigenvalues and eigenvectors of the cost Hamiltonian
 
-def find_eigenvec_eigenval(matrix: np.ndarray) -> typing.Tuple:
-    """Find eigenvalues and eigenvectors of matrix
+# Calculating the eigenvalues and eigenvectors of the cost Hamiltonian
 
-    Args:
-        matrix (np.ndarray)
+def find_eigenvec_eigenval(matrix):
 
-    Returns:
-        tuple: eigenvalues and its corresponding eigenvectors
-    """
     value, vector = np.linalg.eig(matrix)
     new_vector = []
     for v in range(0, len(vector)):
@@ -420,16 +434,9 @@ def find_eigenvec_eigenval(matrix: np.ndarray) -> typing.Tuple:
     return [value, np.array(new_vector)]
 
 # Preaparing the partition function and each of the probability amplitudes of the diifferent terms in the TFD state
-def calculate_terms_partition(eigenvalues: typing.List, beta: int) -> typing.Tuple:
-    """calculate term partitions
 
-    Args:
-        - eigenvalues (typing.List)
-        - beta (int): 0, 1 or 5
+def calculate_terms_partition(eigenvalues,beta):
 
-    Returns:
-        - typing.Tuple
-    """
     list_terms = []
     partition_sum = 0
     for i in eigenvalues:
@@ -438,33 +445,33 @@ def calculate_terms_partition(eigenvalues: typing.List, beta: int) -> typing.Tup
 
     return [list_terms, np.sqrt(float(partition_sum.real))]
 
-# Preparring the TFD state for the cost function
-def tfd(num_qubits: int, beta: int) -> qiskit.QuantumCircuit:
-    """Create TFD state
+#Preparring the TFD state for the cost function
 
-    Args:
-        - num_qubits (int)
-        - beta (int): 0, 1 or 5
+def construct_tfd_state(num_qubits,beta):
 
-    Returns:
-        - qiskit.QuantumCircuit
-    """
     # In this implementation, the eigenvectors of the Hamiltonian and the transposed Hamiltonian are calculated separately
     y_gate = 1
     y = np.array([[0, -1], [1, 0]])
     for i in range(0, num_qubits):
         y_gate = np.kron(y_gate, y)
-
+    
     matrix = calculate_hamiltonian(num_qubits)
     eigen = find_eigenvec_eigenval(matrix)
-    partition = calculate_terms_partition(eigen[0], beta)
+    partition = calculate_terms_partition(eigen[0],beta)
+
     vec = np.zeros(2**(2*num_qubits))
     for i in range(0, 2**num_qubits):
-        time_rev = complex(0, 1)*np.matmul(y_gate, np.conj(eigen[1][i]))
-        addition = (
-            float((partition[0][i]/partition[1]).real))*(np.kron(eigen[1][i], time_rev))
+        
+        # time_rev = complex(0,1)*np.matmul(y_gate, np.conj(eigen[1][i]))
+        addition = (float((partition[0][i]/partition[1]).real))*(np.kron(eigen[1][i], eigen[1][i]))
         vec = np.add(vec, addition)
-    return specific(vec)
+
+    qc = qiskit.QuantumCircuit(num_qubits*2)
+    amplitude_state = vec/np.sqrt(sum(np.absolute(vec) ** 2))
+    qc.prepare_state(amplitude_state, list(range(0, num_qubits*2))) 
+    return qiskit.compiler.transpile(qc,basis_gates=["h","cx","rx","ry",
+    "rz","crx","cry","crz"],optimization_level=3)
+
 
 def time_dependent_qc(num_qubits: int,h_opt, t):
     """create U circuit from h_opt and time t
