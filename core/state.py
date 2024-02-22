@@ -259,6 +259,9 @@ def specific(state: np.ndarray) -> qiskit.QuantumCircuit:
     elif isinstance(state, list):
         num_qubits = int(np.log2(len(state)))    
     qc = qiskit.QuantumCircuit(num_qubits)
+    if np.linalg.norm(state) != 1:
+        import warnings
+        warnings.warn("The input state is not normalized, we will normalize it for you")
     state = state / np.linalg.norm(state)
     qc.prepare_state(state, list(range(0, num_qubits)))
     return qc
