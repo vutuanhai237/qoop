@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name='qsee',
-    url='https://github.com/qsee',
+    url='https://github.com/vutuanhai237/qsee',
     author='Vu Tuan Hai',
     author_email='haivt@uit.edu.vn',
     # Needed to actually package something
@@ -20,6 +20,6 @@ setup(
                       'pytest'],
     version='2.0',
     license='MIT',
-    description='A Python package for quantum compilation',
+    description='qsee: A quantum object search engine',
     long_description=open('README.md').read(),
 )

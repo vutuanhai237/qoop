@@ -2,7 +2,7 @@
 
 <img width = '200px' src = './logo.png'/>
 
-### qsee: a quantum object search engine
+### qsee: A quantum object search engine
 
 **Contributors**: Vu Tuan Hai, Nguyen Tan Viet, Le Bin Ho
 

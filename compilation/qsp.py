@@ -7,7 +7,7 @@ from .qcompilation import QuantumCompilation
 
 class QuantumStatePreparation:
     def __init__(self, u: qiskit.QuantumCircuit | str, 
-                 target_state: qiskit.QuantumCircuit | np.ndarray, 
+                 target_state: qiskit.QuantumCircuit | np.ndarray | typing.List | typing.Dict, 
                  thetas: np.ndarray = np.array([])):
         """There are two key atttributes for QSP problem: u and vdagger.
 
@@ -29,6 +29,8 @@ class QuantumStatePreparation:
             self.vdagger = target_state
         elif isinstance(target_state, np.ndarray):
             self.vdagger = QuantumCompilation.process_vdagger(target_state)
+        elif isinstance(target_state, typing.List) or isinstance(target_state, typing.Dict):
+            self.vdagger = QuantumCompilation.process_vdagger(utilities.to_state(target_state))
         self.num_qubits = self.vdagger.num_qubits
         self.num_params = len(self.thetas)
         if isinstance(u, str):
@@ -50,7 +52,7 @@ class QuantumStatePreparation:
         self.qc = self.u.assign_parameters(self.thetas)
         return self
     
-    def plot(self, filename):
+    def plot(self, filename = ''):
         self.compiler.plot(filename)
         return
     
@@ -119,6 +121,11 @@ class QuantumStatePreparation:
     @staticmethod
     def prepare(state: str | np.ndarray | typing.List | typing.Dict, **kwargs):
         """Call two sub-function prepare
+        - If state is a string, call prepare_existed() method. We will search for the best qspobj in the database
+        Note that state is in the list ['ghz', 'w', 'ame', 'tfd'].
+        - If state is an array, call prepare_random() method. We will prepare the state with the default ansatz
+        |g2gnw>.
+        - If state is a list or dictionary, we convert it into state vector.
 
         Args:
             - state (str | np.ndarray | typing.List): target state
@@ -127,7 +134,7 @@ class QuantumStatePreparation:
             - TypeError: Wrong input type
 
         Returns:
-            - Self@QuantumStatePreparation | QuantumCompilation: depend on type of target state
+            - Self@QuantumStatePreparation | QuantumCompilation: depend on type of target state, if it is a string, return QuantumStatePreparation, else return QuantumCompilation
         """
         if isinstance(state, str):
             return QuantumStatePreparation.prepare_existed(state, **kwargs)
