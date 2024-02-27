@@ -2,7 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-
+def transpiled_circuit(qc):
+    from qiskit.compiler import transpile
+    from qiskit.providers.fake_provider import FakeQasmSimulator
+    qc1 = transpile(qc, backend = FakeQasmSimulator())
+    return qc1
 def plot_15layer(title, fidelitiesghz, fidelitiesw, fidelitieshaar, is_save=False):
     x = [1, 2, 3, 4, 5]
     plt.plot(x, fidelitiesghz, marker='o', color='blue', label='GHZ')
