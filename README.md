@@ -2,15 +2,15 @@
 
 <img width = '200px' src = './logo.png'/>
 
-### qsee: A quantum object search engine
+### $\langle qo|op\rangle$: a quantum object optimizer
 
 **Contributors**: Vu Tuan Hai, Nguyen Tan Viet, Le Bin Ho
 
-**Description**: Quantum programming is being used to address multiple problems in quantum technology fields, from quantum machine learning, quantum computing to quantum physics. Recent advances revolve around the use of quantum programming and quantum compiling, which promises to revolutionize program computation and boost quantum state preparation and tomography’s problem-solving capabilities. However, using quantum computing technologies requires high-level coding skills, which is not trivial for physics scientists. For such a reason, we propose qsee, a Python library that allows researchers and practitioners to configure and experiment with quantum compilation pipelines, within save and load results features for science reports. We showcase the architecture and main features of qsee, other than discussing its envisioned impact on research and practice.
+**Description**: The quantum object optimizer ($\langle {\rm qo|op}\rangle)$ is a Python library that offers a framework for optimizing quantum circuits to represent quantum objects such as quantum states and Hamiltonians. This optimizer is a quantum compilation process in which an ansatz is trained to compile the information from a given quantum object. The software generates shallow circuits that can be implemented on various quantum computers and reduces the time required to process data and simulation. It also allows users to customize the algorithm for practical and proactive solutions to quantum circuit design. In this way, $\langle {\rm qo|op}\rangle$ has the potential to impact both scientific research and practical applications in quantum technology significantly.
 
-**How to use**:
+**How to use**: [Wiki](https://github.com/vutuanhai237/qsee/wiki)
 
-**Additional information**:
+**Additional information**: email to the author haivt@uit.edu.vn
 
 **Code of conducting**:
 
