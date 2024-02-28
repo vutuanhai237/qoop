@@ -265,7 +265,7 @@ def swap_layer(num_qubits: int = 3, shift=0) -> qiskit.QuantumCircuit:
     return qc
 
 
-def alternating_ZXZlayer_ansatz(num_qubits: int = 3,
+def alternating_ZXZlayer(num_qubits: int = 3,
                                 num_layers: int = 1) -> qiskit.QuantumCircuit:
     """Create Alternating ZXZ layer
 
@@ -311,6 +311,21 @@ def Wchain(num_qubits: int) -> qiskit.QuantumCircuit:
     qc.cry(thetas[-1], num_qubits - 1, 0)
     return qc
 
+def WchainCNOT(num_qubits: int) -> qiskit.QuantumCircuit:
+    """Create W_chain ansatz
+
+    Args:
+        - num_qubits (int)
+
+    Returns:
+        - qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    thetas = ParameterVector('theta', num_qubits)
+    for i in range(0, num_qubits - 1):
+        qc.cx(i, i + 1)
+    qc.cx(num_qubits - 1, 0)
+    return qc
 
 def Walternating(num_qubits: int, index_layer: int) -> qiskit.QuantumCircuit:
     """Create Walternating ansatz
@@ -355,6 +370,49 @@ def Walternating(num_qubits: int, index_layer: int) -> qiskit.QuantumCircuit:
             t += 1
     return qc
 
+def WalternatingCNOT(num_qubits: int, index_layer: int) -> qiskit.QuantumCircuit:
+    """Create Walternating ansatz
+
+    Args:
+        - num_qubits (int)
+        - index_layer (int)
+
+    Returns:
+        - qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    def calculate_n_walternating(num_qubits: int, index_layers: int) -> int:
+        """calculate number of parameter in walternating base on index_layer
+
+        Args:
+            num_qubits (int)
+            index_layers (int)
+
+        Returns:
+            int
+        """
+        if index_layers % 2 == 0:
+            n_walternating = int(num_qubits / 2)
+        else:
+            n_walternating = math.ceil(num_qubits / 2)
+        return n_walternating
+
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    thetas = ParameterVector(
+        'theta', calculate_n_walternating(num_qubits, index_layer))
+    t = 0
+    if index_layer % 2 == 0:
+        # Even
+        for i in range(1, qc.num_qubits - 1, 2):
+            qc.cx(i, i + 1)
+            t += 1
+        qc.cx(0, qc.num_qubits - 1)
+    else:
+        # Odd
+        for i in range(0, qc.num_qubits - 1, 2):
+            qc.cx(i, i + 1)
+            t += 1
+    return qc
+
 def Walltoall(num_qubits: int, limit: int=0) -> qiskit.QuantumCircuit:
     """Create Walternating ansatz
 
@@ -394,7 +452,7 @@ def Walltoall(num_qubits: int, limit: int=0) -> qiskit.QuantumCircuit:
     return qc
 
 
-def WalltoallCNOT(qc: qiskit.QuantumCircuit, limit=0) -> qiskit.QuantumCircuit:
+def WalltoallCNOT(num_qubits: int, limit=0) -> qiskit.QuantumCircuit:
     """Create Walltoall CNOT
 
     Args:
@@ -404,6 +462,7 @@ def WalltoallCNOT(qc: qiskit.QuantumCircuit, limit=0) -> qiskit.QuantumCircuit:
     Returns:
         - qiskit.QuantumCircuit: parameterized quantum circuit
     """
+    qc = qiskit.QuantumCircuit(num_qubits)
     t = 0
     for i in range(0, qc.num_qubits):
         for j in range(i + 1, qc.num_qubits):
@@ -430,7 +489,7 @@ def Wchain_zxz(num_qubits: int, num_layers: int = 1) -> qiskit.QuantumCircuit:
     return qc
 
 
-def Walternating_zxz(num_qubits, num_layers: int = 1) -> qiskit.QuantumCircuit:
+def Walternating_zxz(num_qubits, num_layers: int = 1, index_layer: int = 0) -> qiskit.QuantumCircuit:
     """Create Walternating + ZXZ
     Args:
         - num_qubits (int)
@@ -441,7 +500,7 @@ def Walternating_zxz(num_qubits, num_layers: int = 1) -> qiskit.QuantumCircuit:
     """
     qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
     for _ in range(0, num_layers):
-        qc = utilities.compose_circuit([qc, Wchain(num_qubits),
+        qc = utilities.compose_circuit([qc, Walternating(num_qubits, index_layer),
                                         zxz_layer(num_qubits)])
     return qc
 
@@ -459,6 +518,61 @@ def Walltoall_zxz(num_qubits: int, num_layers: int = 1, limit=0) -> qiskit.Quant
     for _ in range(0, num_layers):
         qc = utilities.compose_circuit(
             [qc, Walltoall(num_qubits, limit=limit), zxz_layer(num_qubits)])
+    return qc
+
+def zxz_WchainCNOT(num_qubits: int = 3,
+                                  num_layers: int = 1) -> qiskit.QuantumCircuit:
+    """Create WalltoallCNOT + ZXZ
+
+    Args:
+        - num_qubits (int, optional): efaults to 3.
+        - num_layers (int, optional): Defaults to 1.
+        - limit (int, optional): Defaults to 0.
+
+    Returns:
+        qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    for _ in range(0, num_layers):
+        qc = utilities.compose_circuit(
+            [qc, zxz_layer(num_qubits), WchainCNOT(num_qubits)])
+    return qc
+
+def zxz_WalternatingCNOT(num_qubits: int = 3,
+                                  num_layers: int = 1, index_layer: int = 0) -> qiskit.QuantumCircuit:
+    """Create WalltoallCNOT + ZXZ
+
+    Args:
+        - num_qubits (int, optional): efaults to 3.
+        - num_layers (int, optional): Defaults to 1.
+        - limit (int, optional): Defaults to 0.
+
+    Returns:
+        qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    for _ in range(0, num_layers):
+        qc = utilities.compose_circuit(
+            [qc, zxz_layer(num_qubits), WalternatingCNOT(num_qubits, index_layer)])
+    return qc
+
+def zxz_WalltoallCNOT(num_qubits: int = 3,
+                                  num_layers: int = 1,
+                                  limit=0) -> qiskit.QuantumCircuit:
+    """Create WalltoallCNOT + ZXZ
+
+    Args:
+        - num_qubits (int, optional): efaults to 3.
+        - num_layers (int, optional): Defaults to 1.
+        - limit (int, optional): Defaults to 0.
+
+    Returns:
+        qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits)
+    for _ in range(0, num_layers):
+        qc = utilities.compose_circuit(
+            [qc, zxz_layer(num_qubits), WalltoallCNOT(num_qubits, limit=limit)])
     return qc
 
 
@@ -499,7 +613,7 @@ def zxz_layer(num_qubits: int = 3, num_layers: int = 1) -> qiskit.QuantumCircuit
     return qc
 
 
-def random_ccz_circuit(num_qubits: int, num_gates: int) -> qiskit.QuantumCircuit:
+def random_ccz(num_qubits: int, num_gates: int) -> qiskit.QuantumCircuit:
     """Adds a random number of CZ or CCZ gates (up to `max_gates`) to the given circuit.
 
     Args:

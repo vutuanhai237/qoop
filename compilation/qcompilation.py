@@ -85,7 +85,7 @@ class QuantumCompilation():
         """
         num_qubits = int(np.log2(target_state.shape[0]))
         vdagger = QuantumCompilation.process_vdagger(target_state)
-        compiler = QuantumCompilation(ansatz.g2gnw(num_qubits, 1), vdagger)
+        compiler = QuantumCompilation(ansatz.zxz_WchainCNOT(num_qubits, 1), vdagger)
         return compiler
     def set_u(self, _u: qiskit.QuantumCircuit) -> int:
         """In quantum state preparation problem, this is the ansatz. In tomography, this is the circuit that generate random Haar state.
