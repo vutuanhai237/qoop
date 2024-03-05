@@ -236,14 +236,23 @@ def ghz_inverse(num_qubits: int, theta: float = np.pi / 2) -> qiskit.QuantumCirc
 
 def specific_matrix(matrix: np.ndarray) -> qiskit.QuantumCircuit:
     if utilities.is_unitary(matrix) == False:
+        raise Warning("The input matrix is not unitary")
         matrix = utilities.to_unitary(matrix)
     num_qubits = int(np.log2(matrix.shape[0]))
-    unitary_matrix = matrix
+    unitary_matrix = qiskit.quantum_info.Operator(matrix)
     unitary_gate = qiskit.QuantumCircuit(num_qubits)
-    unitary_gate.unitary(unitary_matrix, list(range(0, num_qubits)))
-    unitary_gate = unitary_gate.to_gate(label='InputUnita')
+    # unitary_gate.unitary(unitary_matrix, list(range(0, num_qubits)))
+    # print(matrix)
+    # unitary_gate = unitary_gate.to_gate()
+    # print(qiskit.quantum_info.Statevector(unitary_gate).data)
     qc = qiskit.QuantumCircuit(num_qubits)
-    qc.append(unitary_gate, list(range(0, num_qubits)))
+    qc.unitary(unitary_matrix, list(range(0, num_qubits)), label='InputUnita')
+    # from qiskit.providers.fake_provider import FakeQasmSimulator
+    # backend = FakeQasmSimulator()
+
+    # qc1 = qiskit.transpile(qc, backend, basis_gates=[
+    #                    'cx', 'rx', 'ry', 'rz', 'h', 'crx', 'cry', 'crz', 'ccz'])
+    # print(qc1.draw())
     return qc
 def specific(state: np.ndarray) -> qiskit.QuantumCircuit:
     """Create a random Haar quantum state
