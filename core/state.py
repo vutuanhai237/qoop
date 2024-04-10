@@ -4,7 +4,7 @@ import typing
 import types
 from ..backend import utilities
 from scipy.linalg import expm
-from qiskit.extensions import UnitaryGate
+# from qiskit.extensions import UnitaryGate
 """
 Function to load classical data in a quantum device
 This code is copy from https://github.com/adjs/dcsp/blob/master/encoding.py

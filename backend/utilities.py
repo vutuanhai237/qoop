@@ -99,7 +99,7 @@ def get_wires_of_gate(gate: qiskit.circuit.Gate) -> typing.List[int]:
     """
     list_wire = []
     for register in gate[1]:
-        list_wire.append(register.index)
+        list_wire.append(register._index)
     return list_wire
 
 
