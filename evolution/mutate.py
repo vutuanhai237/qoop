@@ -52,7 +52,7 @@ def layerflip_mutate(qc: qiskit.QuantumCircuit, prob_mutate: float = 0.1) -> qis
     """Mutate qc to other.
 
     Args:
-        qc (qsee.evolution.eEqc)
+        qc (qiskit.QuantumCircuit)
         is_truncate (bool, optional): If it's true, make the qc depth into default. Defaults to True.
 
     Returns:
