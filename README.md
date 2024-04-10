@@ -10,7 +10,8 @@
 
 **How to use**: [Wiki](https://github.com/vutuanhai237/qoop/wiki)
 
-**Additional information**: email to the author vu.tuan_hai.vr7@naist.ac.jp
+**Additional information**: email to the author vu.tuan_hai.vr7@naist.ac.jp 
+
 **Code of conducting**:
 
 **License**: MIT LICENSE
