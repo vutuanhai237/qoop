@@ -193,7 +193,7 @@ def w_sub(qc: qiskit.QuantumCircuit, num_qubits: int, shift: int = 0) -> qiskit.
         # Recursion until the number of qubits equal 3
         w_sub(qc, num_qubits - 1, qc.num_qubits - (num_qubits - 1))
         for i in range(1, num_qubits):
-            qc.cnot(i + shift, shift)
+            qc.cx(i + shift, shift)
     return qc
 
 
@@ -212,7 +212,7 @@ def ghz(num_qubits, theta: float = np.pi / 2) -> qiskit.QuantumCircuit:
     qc = qiskit.QuantumCircuit(num_qubits)
     qc.ry(theta, 0)
     for i in range(0, qc.num_qubits - 1):
-        qc.cnot(0, i + 1)
+        qc.cx(0, i + 1)
     return qc
 
 
@@ -230,7 +230,7 @@ def ghz_inverse(num_qubits: int, theta: float = np.pi / 2) -> qiskit.QuantumCirc
         theta = (theta['theta'])
     qc = qiskit.QuantumCircuit(num_qubits)
     for i in range(0, num_qubits - 1):
-        qc.cnot(0, num_qubits - i - 1)
+        qc.cx(0, num_qubits - i - 1)
     qc.ry(-theta, 0)
     return qc
 

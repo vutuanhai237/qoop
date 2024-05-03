@@ -71,7 +71,7 @@ from ..backend import constant
 #     return meas_filter
 
 
-def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode: str = 'theory'):
+def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode = constant.MODE):
     """Measuring the quantu circuit which fully measurement gates
 
     Args:
@@ -89,10 +89,16 @@ def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode: 
         if mode == constant.MeasureMode.THEORY.value:
             operator = qi.DensityMatrix(qc.assign_parameters(parameter_values)).data
             result = np.real(operator[0][0])
-        elif mode == constant.MeasureMode.SIMULATE.value:
+        elif mode == constant.MeasureMode.EXPERIMENT.value:
             qc.measure_all()
             sampler = Sampler()
             result = sampler.run(qc, parameter_values=parameter_values, shots = 10000).result().quasi_dists[0].get(0, 0)
+        elif mode == constant.MeasureMode.SIMULATE.value:
+            psi = constant.PSI
+            
+            phi_theta = qi.Statevector.from_instruction(qc.assign_parameters(parameter_values)).data
+            result = (np.conjugate(np.transpose(phi_theta)) @ psi) ** 2
+            print(result)
     return result
     # The below is old version
     # n = len(qubits)

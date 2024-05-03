@@ -51,6 +51,7 @@ def single_4term_psr(qc: qiskit.QuantumCircuit, thetas: np.ndarray, i: int) -> f
         measure.measure(qc.copy(), thetas4)))
 
 
+
 def grad_loss(qc: qiskit.QuantumCircuit, thetas: np.ndarray) -> np.ndarray:
     """Return the gradient of the loss function
 

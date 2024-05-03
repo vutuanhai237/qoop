@@ -21,6 +21,7 @@ class GAMode(enum.Enum):
 class MeasureMode(enum.Enum):
     THEORY = 'theory'
     SIMULATE = 'simulate'
+    EXPERIMENT = 'experiment'
 # Optimizer name
 class OptimizerName(enum.Enum):
     SGD = 'sgd'
@@ -44,6 +45,9 @@ DEFAULT_COMPILATION_METRICS = [
     MetricName.COMPILATION_TRACE_FIDELITIES.value, 
     MetricName.COMPILATION_TRACE_DISTANCES.value
 ]
+
+PSI = []
+MODE = MeasureMode.SIMULATE.value
 # Predictor hyperparameter
 DROP_OUT_RATE = 0.5
 L2_REGULARIZER_RATE = 0.005

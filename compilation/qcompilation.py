@@ -204,6 +204,51 @@ class QuantumCompilation():
         finally:
             return 0
 
+    
+    def fast_fit(self, num_steps: int = 100, verbose: int = 0):
+        """Optimize the thetas parameters
+
+        Args:
+            - num_steps: number of iterations
+            - verbose (int, optional): 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per 10 steps. Verbose 1 is good for timing training time, verbose 2 if you want to log loss values to a file. Please install package tdqm if you want to use verbose 1. 
+            - metrics (List[str]): list of metric name that you want, take example, ['compilation', 'gibbs']
+        Returns:
+            - QuantumCompilation: self
+        """
+        self.num_steps = num_steps
+        if len(self.thetas) == 0:
+            if (len(self.u.parameters)) > 0:
+                self.thetas = np.ones(len(self.u.parameters))
+            else:
+                self.thetas = np.ones(len(self.vdagger.parameters))
+        self.is_trained = True
+
+        if verbose == 1:
+            bar = utilities.ProgressBar(max_value=num_steps, disable=False)
+        # Default Adam
+        psi = qi.Statevector.from_instruction(self.vdagger).data
+        # save psi as file
+        constant.PSI = psi
+        constant.MODE = constant.MeasureMode.SIMULATE.value
+        for i in range(0, num_steps):
+            grad_loss = gradient.grad_loss(self.u, self.thetas)
+            if i == 0:
+                m, v1 = list(np.zeros(self.thetas.shape[0])), list(
+                    np.zeros(self.thetas.shape[0]))
+            optimizer_params = [m, v1, i, grad_loss]
+            self.thetas = optimizer.adam(self.thetas, *optimizer_params)
+            self.thetass.append(self.thetas.copy())
+            if verbose == 1:
+                bar.update(1)
+            if verbose == 2 and i % 10 == 0:
+                print(f"Step {i} ...")
+
+        if verbose == 1:
+            bar.close()
+        self.calculate_metrics()
+        # Delete psi file
+        return self    
+
     def fit(self, num_steps: int = 100, verbose: int = 0):
         """Optimize the thetas parameters
 
