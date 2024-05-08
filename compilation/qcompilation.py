@@ -226,10 +226,10 @@ class QuantumCompilation():
         if verbose == 1:
             bar = utilities.ProgressBar(max_value=num_steps, disable=False)
         # Default Adam
-        psi = qi.Statevector.from_instruction(self.vdagger).data
-        # save psi as file
+        psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
         constant.PSI = psi
-        constant.MODE = constant.MeasureMode.SIMULATE.value
+        constant.UVDAGGER = self.u.compose(self.vdagger)
+        constant.MEASURE_MODE = constant.MeasureMode.SIMULATE.value
         for i in range(0, num_steps):
             grad_loss = gradient.grad_loss(self.u, self.thetas)
             if i == 0:
@@ -242,7 +242,7 @@ class QuantumCompilation():
                 bar.update(1)
             if verbose == 2 and i % 10 == 0:
                 print(f"Step {i} ...")
-
+        constant.MEASURE_MODE = constant.MeasureMode.THEORY.value
         if verbose == 1:
             bar.close()
         self.calculate_metrics()
@@ -259,6 +259,7 @@ class QuantumCompilation():
         Returns:
             - QuantumCompilation: self
         """
+        constant.MEASURE_MODE = constant.MeasureMode.THEORY.value
         self.num_steps = num_steps
         if len(self.thetas) == 0:
             if (len(self.u.parameters)) > 0:

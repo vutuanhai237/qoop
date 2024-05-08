@@ -46,8 +46,9 @@ DEFAULT_COMPILATION_METRICS = [
     MetricName.COMPILATION_TRACE_DISTANCES.value
 ]
 
+UVDAGGER = None
 PSI = []
-MODE = MeasureMode.SIMULATE.value
+MEASURE_MODE = MeasureMode.THEORY.value
 # Predictor hyperparameter
 DROP_OUT_RATE = 0.5
 L2_REGULARIZER_RATE = 0.005

@@ -71,7 +71,7 @@ from ..backend import constant
 #     return meas_filter
 
 
-def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode = constant.MODE):
+def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode = constant.MEASURE_MODE):
     """Measuring the quantu circuit which fully measurement gates
 
     Args:
@@ -86,19 +86,31 @@ def measure(qc: qiskit.QuantumCircuit, parameter_values: np.ndarray = [], mode =
         sampler = Sampler()
         result = sampler.run(qc, shots = 10000).result().quasi_dists[0].get(0, 0)
     else:
-        if mode == constant.MeasureMode.THEORY.value:
+        if constant.MEASURE_MODE == constant.MeasureMode.THEORY.value:
             operator = qi.DensityMatrix(qc.assign_parameters(parameter_values)).data
             result = np.real(operator[0][0])
-        elif mode == constant.MeasureMode.EXPERIMENT.value:
+        elif constant.MEASURE_MODE == constant.MeasureMode.EXPERIMENT.value:
             qc.measure_all()
             sampler = Sampler()
             result = sampler.run(qc, parameter_values=parameter_values, shots = 10000).result().quasi_dists[0].get(0, 0)
-        elif mode == constant.MeasureMode.SIMULATE.value:
-            psi = constant.PSI
-            
+        
+        elif constant.MEASURE_MODE == constant.MeasureMode.SIMULATE.value:
+            # from . import state
+            # operator = qi.DensityMatrix(constant.UVDAGGER.assign_parameters(parameter_values)).data
+            # result = np.real(operator[0][0])
+            # print(constant.UVDAGGER.assign_parameters(parameter_values).draw())
+            # print('True: ', result)
+            psi = constant.PSI     
+            # print("Psi: ", psi)
+            # print(qc.assign_parameters(parameter_values).compose(state.specific(psi).inverse()).draw())
+            # operator = qi.DensityMatrix(qc.assign_parameters(parameter_values).compose(state.specific(psi).inverse())).data
+            # result1 = np.real(operator[0][0])
+            # print('True_U: ', result1)
+            # THIS QC is JUST U, NOT UVDAGGER
             phi_theta = qi.Statevector.from_instruction(qc.assign_parameters(parameter_values)).data
-            result = (np.conjugate(np.transpose(phi_theta)) @ psi) ** 2
-            print(result)
+            result = np.real(np.dot(np.conjugate(psi), phi_theta))**2
+            # print("Result_U: ", result2)
+            # print(np.abs(result - result2))
     return result
     # The below is old version
     # n = len(qubits)
