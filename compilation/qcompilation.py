@@ -226,8 +226,13 @@ class QuantumCompilation():
         if verbose == 1:
             bar = utilities.ProgressBar(max_value=num_steps, disable=False)
         # Default Adam
-        psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
-        constant.PSI = psi
+        # psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
+        if constant.PSI is None:
+            print("You must add the line 'constant.PSI = ...' before calling this function.")
+            print("I'm taking psi from Vdagger, but it's not good.")
+            psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
+            constant.PSI = psi
+        # constant.PSI = psi
         constant.UVDAGGER = self.u.compose(self.vdagger)
         constant.MEASURE_MODE = constant.MeasureMode.SIMULATE.value
         for i in range(0, num_steps):
