@@ -233,7 +233,7 @@ class QuantumCompilation():
             psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
             constant.PSI = psi
         # constant.PSI = psi
-        constant.UVDAGGER = self.u.compose(self.vdagger)
+        constant.UVDAGGER = self.u.compose(self.vdagger, inplace=True)
         constant.MEASURE_MODE = constant.MeasureMode.SIMULATE.value
         for i in range(0, num_steps):
             grad_loss = gradient.grad_loss(self.u, self.thetas)

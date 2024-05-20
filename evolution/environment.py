@@ -180,7 +180,7 @@ class EEnvironment():
             #####################
             #### Threshold ######
             #####################
-            if self.fitness_func(self.best_circuit) < np.max(self.fitnesss):
+            if self.best_fitness < np.max(self.fitnesss):
                 self.best_circuit = self.circuits[np.argmax(self.fitnesss)]
                 self.best_fitness = np.max(self.fitnesss)
                 if hasattr(self, 'fitness_full_func'):
@@ -214,7 +214,7 @@ class EEnvironment():
             ####################
             for i in range(0, len(new_circuits)):
                 new_circuits[i] = self.mutate_func(new_circuits[i], self.metadata.prob_mutate)
-                
+                new_circuits[i] = utilities.compose_circuit([new_circuits[i]])
             #####################
             ##### Post-process ##
             #####################
