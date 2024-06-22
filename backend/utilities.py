@@ -191,12 +191,13 @@ def create_observers(qc: qiskit.QuantumCircuit, k: int = 0) -> typing.List:
         # 2-qubit param gates
         if gate[0].name in ['crx', 'cry', 'crz', 'cx', 'cz']:
             # Take controlled wire as index
-            wire = qc.num_qubits - 1 - gate[1][1].index
+            wire = qc.num_qubits - 1 - gate[1][1]._index
             # Take control wire as index
             # wire = qc.num_qubits - 1 - gate[1][0].index
         # Single qubit param gates
         else:
-            wire = qc.num_qubits - 1 - gate[1][0].index
+            # get all properties of gate
+            wire = qc.num_qubits - 1 - gate[1][0]._index
         observer.append([gate_name, wire])
     return observer
 

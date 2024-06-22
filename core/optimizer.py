@@ -147,7 +147,7 @@ def qng_adam(
     Returns:
         - np.ndarray: parameters after update
     """
-    F = gradient.qfim.create_QFIM(psi, grad_psi)
+    F = gradient.qfim(psi, grad_psi)
     # Because det(QFIM) can be nearly equal zero
     if np.isclose(np.linalg.det(F), 0):
         inverse_F = np.identity(F.shape[0])
