@@ -60,7 +60,7 @@ def qng_fubini_study_hessian(
     Returns:
         - np.ndarray: parameters after update
     """
-    thetas = np.real(thetas - constant.LEARNING_RATE * (np.linalg.inv(G) @ grad_loss))
+    thetas = np.real(thetas - constant.LEARNING_RATE * (np.linalg.pinv(G) @ grad_loss))
     return thetas
 
 
@@ -77,7 +77,7 @@ def qng_fubini_study(
     Returns:
         - np.ndarray: parameters after update
     """
-    thetas = np.real(thetas - constant.LEARNING_RATE * (np.linalg.inv(G) @ grad_loss))
+    thetas = np.real(thetas - constant.LEARNING_RATE * (np.linalg.pinv(G) @ grad_loss))
     return thetas
 
 
@@ -95,7 +95,7 @@ def qng_fubini_study_scheduler(
         - np.ndarray: parameters after update
     """
     lr = constant.LEARNING_RATE * constant.GAMMA ** round(iter / 30)
-    thetas = np.real(thetas - lr * ((np.linalg.inv(G) @ grad_loss)))
+    thetas = np.real(thetas - lr * ((np.linalg.pinv(G) @ grad_loss)))
     return thetas
 
 
@@ -119,7 +119,7 @@ def qng_qfim(
     if np.isclose(np.linalg.det(F), 0):
         inverse_F = np.identity(F.shape[0])
     else:
-        inverse_F = np.linalg.inv(F)
+        inverse_F = np.linalg.pinv(F)
     thetas -= constant.LEARNING_RATE * (inverse_F @ grad_loss)
     return thetas
 
@@ -152,7 +152,7 @@ def qng_adam(
     if np.isclose(np.linalg.det(F), 0):
         inverse_F = np.identity(F.shape[0])
     else:
-        inverse_F = np.linalg.inv(F)
+        inverse_F = np.linalg.pinv(F)
 
     grad = inverse_F @ grad_loss
     thetas = adam(thetas, m, v, i, grad)
