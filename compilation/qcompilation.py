@@ -376,7 +376,7 @@ class QuantumCompilation():
         plt.xlabel('Num. iteration')
         plt.legend()
         if len(filename) > 0:
-            plt.savefig(f'{filename}.eps', format='eps', dpi = 1000)
+            plt.savefig(f'{filename}.svg', format='svg', dpi = 1000)
         return
 
     def plot_animation(self, interval: int = 100, file_name: str = 'test.gif'):
