@@ -227,7 +227,7 @@ class QuantumCompilation():
             bar = utilities.ProgressBar(max_value=num_steps, disable=False)
         # Default Adam
         # psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
-        if constant.PSI is None:
+        if constant.PSI is None or len(constant.PSI) == 0:
             print("You must add the line 'constant.PSI = ...' before calling this function.")
             print("I'm taking psi from Vdagger, but it's not good.")
             psi = qi.Statevector.from_instruction(self.vdagger.inverse()).data
@@ -237,40 +237,12 @@ class QuantumCompilation():
         constant.MEASURE_MODE = constant.MeasureMode.SIMULATE.value
         for i in range(0, num_steps):
             grad_loss = gradient.grad_loss(self.u, self.thetas)
-            optimizer_name = self.optimizer.__name__
-            if optimizer_name == constant.OptimizerName.SGD.value:
-                optimizer_params = [grad_loss]
-            elif optimizer_name == constant.OptimizerName.ADAM.value:
-                if i == 0:
-                    m, v1 = list(np.zeros(self.thetas.shape[0])), list(
-                        np.zeros(self.thetas.shape[0]))
-                optimizer_params = [m, v1, i, grad_loss]
+            if i == 0:
+                m, v1 = list(np.zeros(self.thetas.shape[0])), list(
+                    np.zeros(self.thetas.shape[0]))
+            optimizer_params = [m, v1, i, grad_loss]
 
-            elif 'qng' in optimizer_name:
-                grad_psi1 = gradient.grad_psi(constant.UVDAGGER, self.thetas,
-                                            r=1 / 2,
-                                            s=np.pi)
-                qc_binded = constant.UVDAGGER.assign_parameters(self.thetas)
-                psi = qi.Statevector.from_instruction(qc_binded).data
-                psi = np.expand_dims(psi, 1)
-                if optimizer_name == constant.OptimizerName.QNG_FUBINI_STUDY.value:
-                    G = gradient.qng(qc_binded)
-                    optimizer_params = [G, grad_loss]
-                if optimizer_name == constant.OptimizerName.QNG_FUBINI_STUDY_HESSIAN.value:
-                    G = gradient.qng_hessian(constant.UVDAGGER)
-                    optimizer_params = [G, grad_loss]
-                if optimizer_name == constant.OptimizerName.QNG_FUBINI_STUDY_SCHEDULER.value:
-                    G = gradient.qng(constant.UVDAGGER)
-                    optimizer_params = [G, i, grad_loss]
-                if optimizer_name == constant.OptimizerName.QNG_QFIM.value:
-                    optimizer_params = [psi, grad_psi1, grad_loss]
-                if optimizer_name == constant.OptimizerName.QNG_ADAM.value:
-                    if i == 0:
-                        m, v1 = list(np.zeros(self.thetas.shape[0])), list(
-                            np.zeros(self.thetas.shape[0]))
-                    optimizer_params = [m, v1, i, psi, grad_psi1, grad_loss]
-            # print(self.optimizer.__name__)
-            self.thetas = self.optimizer(self.thetas, *optimizer_params)
+            self.thetas = optimizer.adam(self.thetas, *optimizer_params)
             self.thetass.append(self.thetas.copy())
             if verbose == 1:
                 bar.update(1)
@@ -349,7 +321,7 @@ class QuantumCompilation():
 
         if verbose == 1:
             bar.close()
-        self.calculate_metrics()
+        # self.calculate_metrics()
         return self
 
     def calculate_metrics(self) -> None:
