@@ -123,8 +123,8 @@ def compilation_trace_fidelity(rho, sigma) -> float:
     sigma = sigma.data
     return np.real(
         np.trace(
-            scipy.linalg.sqrtm((scipy.linalg.sqrtm(rho)) @ (rho))
-            @ (scipy.linalg.sqrtm(sigma))
+            scipy.linalg.sqrtm((scipy.linalg.sqrtm(rho)) @ (sigma))
+            @ (scipy.linalg.sqrtm(rho))
         )
     )
 
