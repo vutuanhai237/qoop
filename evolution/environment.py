@@ -38,10 +38,17 @@ def bypass_compile(circuit: ECircuit):
     return circuit
 
 
-def multiple_compile(circuits: typing.List[ECircuit]):
-    executor = concurrent.futures.ProcessPoolExecutor()
-    results = executor.map(bypass_compile, circuits)
-    return results
+# def multiple_compile(circuits: typing.List[ECircuit]):
+#     executor = concurrent.futures.ProcessPoolExecutor()
+#     results = executor.map(bypass_compile, circuits)
+#     return results
+
+def multiple_compile(func, params):
+    k = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for number in (executor.map(func, params)):
+            k.append((number))
+    return k
 
 class EEnvironment():
     """Saved information for evolution process
@@ -125,7 +132,7 @@ class EEnvironment():
         self.circuits: typing.List[qiskit.QuantumCircuit] = circuits
         return
 
-    def evol(self, verbose: int = 0, auto_save: bool = True):
+    def evol(self, verbose: int = 0, mode = 'parallel', auto_save: bool = True):
         if verbose == 1:
             bar = utilities.ProgressBar(
                 max_value=self.metadata.num_generation, disable=False)
@@ -154,9 +161,13 @@ class EEnvironment():
             ######## Cost #######
             #####################
             # new_population = multiple_compile(new_population)
-            self.fitnesss = []
-            for i in range(len(self.circuits)):
-                self.fitnesss.append(self.fitness_func(self.circuits[i]))
+            if mode == 'parallel':
+                self.fitnesss = []
+                fitnesss_temp = multiple_compile(self.fitness_func, self.circuits)
+                self.fitnesss.extend(fitnesss_temp)
+            else:
+                for i in range(len(self.circuits)):
+                    self.fitnesss.append(self.fitness_func(self.circuits[i]))
             self.metadata.best_fitnesss.append(np.max(self.fitnesss))
             self.best_circuits.append(self.circuits[np.argmax(self.fitnesss)])
             if self.best_circuit is None:
