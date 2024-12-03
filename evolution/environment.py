@@ -2,13 +2,12 @@
 
 from .ecircuit import ECircuit
 from .selection import sastify_circuit
-from ..evolution import crossover, mutate, selection, threshold
+from ..evolution import crossover, mutate, selection, threshold, generator
 from ..core import random_circuit
 from ..backend import utilities
-from dataclasses import dataclass, field
+from .environment_parent import Metadata
 import types
 import typing
-import random
 import os
 import json
 import datetime
@@ -44,25 +43,13 @@ def multiple_compile(circuits: typing.List[ECircuit]):
     results = executor.map(bypass_compile, circuits)
     return results
 
-
-@dataclass
-class EEnvironmentMetadata:
-    num_qubits: int
-    depth: int
-    num_circuit: int
-    num_generation: int
-    current_generation: int = field(default_factory=lambda: 0)
-    fitnessss: list = field(default_factory=lambda: [])
-    best_fitnesss: list = field(default_factory=lambda: [])
-    prob_mutate: float = field(default_factory=lambda: 0.1)
-
-
 class EEnvironment():
     """Saved information for evolution process
     """
 
-    def __init__(self, metadata: EEnvironmentMetadata | dict,
+    def __init__(self, metadata: Metadata | dict,
                  fitness_func: typing.List[types.FunctionType] = [],
+                 generator_func: types.FunctionType = None,
                  crossover_func: types.FunctionType = crossover.onepoint_crossover,
                  mutate_func: types.FunctionType = mutate.bitflip_mutate,
                  selection_func: types.FunctionType = selection.elitist_selection,
@@ -90,24 +77,25 @@ class EEnvironment():
             self.fitness_full_func = fitness_func[1]
         else:
             self.fitness_func = None
- 
+        self.generator_func = generator_func
         self.crossover_func = crossover_func
         self.mutate_func = mutate_func
         self.selection_func = selection_func
         self.threshold_func = threshold_func
-        if isinstance(metadata, EEnvironmentMetadata):
+        if isinstance(metadata, Metadata):
             self.metadata = metadata
-        elif isinstance(metadata, dict):
-            self.metadata = EEnvironmentMetadata(
-                num_qubits=metadata.get('num_qubits', 0),
-                depth=metadata.get('depth', 0),
-                num_circuit=metadata.get('num_circuit', 0),
-                num_generation=metadata.get('num_generation', 0),
-                current_generation=metadata.get('current_generation', 0),
-                fitnessss=metadata.get('fitnessss', []),
-                best_fitnesss=metadata.get('best_fitnesss', []),
-                prob_mutate=metadata.get('prob_mutate', []),
-            )
+        # Eliminate this case because it will be many type of env_metadata
+        # elif isinstance(metadata, dict):
+        #     self.metadata = Metadata(
+        #         num_qubits=metadata.get('num_qubits', 0),
+        #         depth=metadata.get('depth', 0),
+        #         num_circuit=metadata.get('num_circuit', 0),
+        #         num_generation=metadata.get('num_generation', 0),
+        #         current_generation=metadata.get('current_generation', 0),
+        #         fitnessss=metadata.get('fitnessss', []),
+        #         best_fitnesss=metadata.get('best_fitnesss', []),
+        #         prob_mutate=metadata.get('prob_mutate', []),
+        #     )
         self.fitnesss: list = []
         self.circuits: typing.List[ECircuit] = []
         self.circuitss: typing.List[typing.List[ECircuit]] = []
@@ -173,7 +161,7 @@ class EEnvironment():
             self.best_circuits.append(self.circuits[np.argmax(self.fitnesss)])
             if self.best_circuit is None:
                 self.best_circuit = self.best_circuits[0]
-            print(self.fitnesss)
+            print(np.round(self.fitnesss, 4))
             self.metadata.fitnessss.append(self.fitnesss)
             if auto_save:
                 self.save()
@@ -188,12 +176,12 @@ class EEnvironment():
                     if self.threshold_func(full_best_fitness):
                         print(
                             f'End progress soon at generation {self.metadata.current_generation}, best score ever: {full_best_fitness}')
-                        return
+                        return self
                 else:
                     if self.threshold_func(self.best_fitness):
                         print(
                             f'End progress soon at generation {self.metadata.current_generation}, best score ever: {self.best_fitness}')
-                        return
+                        return self
 
             #####################
             ##### Selection #####
@@ -224,7 +212,7 @@ class EEnvironment():
                 self.save()      
 
         print(f'End evol progress, best score ever: {self.best_fitness}')
-        return
+        return self
 
     def init(self):
         """Create and evaluate first generation in the environment
@@ -233,8 +221,7 @@ class EEnvironment():
             raise ValueError("Please set fitness function before init")
         num_sastify_circuit = 0
         while (num_sastify_circuit < self.metadata.num_circuit):
-            circuit = random_circuit.generate_with_pool(
-                self.metadata.num_qubits, self.metadata.depth)
+            circuit = self.generator_func(self.metadata)
             if sastify_circuit(circuit):
                 num_sastify_circuit += 1
                 self.circuits.append(circuit)
@@ -296,6 +283,7 @@ class EEnvironment():
                     open(os.path.join(file_name, 'metadata.json')))
                 env = EEnvironment(
                     metadata=metadata,
+                    generator_func=getattr(generator, funcs['generator_func']),
                     crossover_func=getattr(crossover, funcs['crossover_func']),
                     mutate_func=getattr(mutate, funcs['mutate_func']),
                     selection_func=getattr(selection, funcs['selection_func']),
@@ -351,6 +339,7 @@ class EEnvironment():
             os.mkdir(file_name)
 
         funcs = {
+            'generator_func': self.generator_func.__name__,
             'fitness_func': self.fitness_func.__name__,
             'crossover_func': self.crossover_func.__name__,
             'mutate_func': self.mutate_func.__name__,

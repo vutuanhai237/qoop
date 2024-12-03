@@ -510,6 +510,7 @@ def time_dependent_qc(num_qubits: int,h_opt, t):
     if not np.allclose(U @ U.conj().T, np.eye(U.shape[0])):
         raise ValueError("The resulting matrix U is not unitary.")
 
+    from qiskit.circuit.library import UnitaryGate
     # Create a UnitaryGate from the unitary_matrix
     unitary_gate = UnitaryGate(U)
 
@@ -543,6 +544,7 @@ def time_dependent_qc_inverse(num_qubits: int,h_opt, t):
     if not np.allclose(U @ U.conj().T, np.eye(U.shape[0])):
         raise ValueError("The resulting matrix U is not unitary.")
 
+    from qiskit.circuit.library import UnitaryGate
     # Create a UnitaryGate from the unitary_matrix
     unitary_gate = UnitaryGate(U)
 

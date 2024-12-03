@@ -4,7 +4,27 @@ import typing, types, qiskit
 import qiskit
 from ..backend import utilities
 
-#generate random crossover point
+
+
+
+def onepoint(divider_func: types.FunctionType, normalizer_func: types.FunctionType) -> typing.Tuple:
+    """Cross over between two circuits and create 2 offsprings
+
+    Args:
+        - circuit1 (qiskit.QuantumCircuit): Father
+        - circuit2 (qiskit.QuantumCircuit): Mother
+        - percent (float, optional): Percent of father's genome in offspring 1. Defaults to None.
+
+    """
+    def crossover_func(circuit1: qiskit.QuantumCircuit, circuit2: qiskit.QuantumCircuit):
+        sub11, sub12 = divider_func(circuit1)
+        sub21, sub22 = divider_func(circuit2)
+        combined_qc1 = normalizer_func(utilities.compose_circuit([sub11, sub22]))
+        combined_qc2 = normalizer_func(utilities.compose_circuit([sub21, sub12]))
+        return combined_qc1, combined_qc2
+    return crossover_func
+
+
 def random_crossover_point(circuit1: qiskit.QuantumCircuit, circuit2: qiskit.QuantumCircuit,
                             is_truncate=False) -> typing.Tuple:
     """Cross over between two circuits and create 2 offsprings"""

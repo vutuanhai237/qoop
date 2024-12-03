@@ -43,7 +43,7 @@ def adam(
         v[i] = beta2 * v[i] + (1 - beta2) * grad_loss[i] ** 2
         mhat = m[i] / (1 - beta1 ** (iteration + 1))
         vhat = v[i] / (1 - beta2 ** (iteration + 1))
-        thetas[i] -= constant.LEARNING_RATE * mhat / (np.sqrt(vhat) + epsilon)
+        thetas[i] -= (constant.LEARNING_RATE * (0.98)**iteration) * mhat / (np.sqrt(vhat) + epsilon)
     return thetas
 
 
