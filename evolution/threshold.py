@@ -1,4 +1,9 @@
 
+def synthesis_threshold(fitness_value):
+    if fitness_value > 0.99:
+        return True
+    return False
+
 def compilation_threshold(fitness_value):
     if fitness_value > 0.9:
         return True

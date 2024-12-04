@@ -212,7 +212,8 @@ class EEnvironment():
             ##### Mutation #####
             ####################
             for i in range(0, len(new_circuits)):
-                new_circuits[i] = self.mutate_func(new_circuits[i], self.metadata.prob_mutate)
+                new_circuits[i] = self.mutate_func(new_circuits[i])
+                # normalize parameter of circuit
                 new_circuits[i] = utilities.compose_circuit([new_circuits[i]])
             #####################
             ##### Post-process ##
