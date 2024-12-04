@@ -1,7 +1,7 @@
 import qiskit
 import typing
 
-def by_num_cnot(qc: qiskit.QuantumCircuit, k: int) -> typing.List[qiskit.QuantumCircuit]:
+def by_num_cnot(k: int) -> typing.List[qiskit.QuantumCircuit]:
     """Dividing circuit into two sub-circuits based on the number of CNOT gates
 
     Args:
@@ -11,25 +11,27 @@ def by_num_cnot(qc: qiskit.QuantumCircuit, k: int) -> typing.List[qiskit.Quantum
     Returns:
         - typing.List[qiskit.QuantumCircuit]: two separated quantum circuits
     """
-    if k < 0:
-        raise ValueError("The number of CNOT gates must be >= 0")
+    def by_num_cnot_func(qc: qiskit.QuantumCircuit):
+        if k < 0:
+            raise ValueError("The number of CNOT gates must be >= 0")
 
-    qc1 = qiskit.QuantumCircuit(qc.num_qubits)
-    qc2 = qiskit.QuantumCircuit(qc.num_qubits)
-    cnot_count = 0
-    stop = 0
+        qc1 = qiskit.QuantumCircuit(qc.num_qubits)
+        qc2 = qiskit.QuantumCircuit(qc.num_qubits)
+        cnot_count = 0
+        stop = 0
 
-    for i in range(len(qc)):
-        if qc[i][0].name == 'cx':
-            cnot_count += 1
-        qc1.append(qc[i][0], qc[i][1])
-        stop += 1
-        if cnot_count == k and i + 1 < len(qc) and qc[i+1][0].name == 'cx':
-            for x in qc[stop:]:
-                qc2.append(x[0], x[1])
-            return qc1, qc2
+        for i in range(len(qc)):
+            if qc[i][0].name == 'cx':
+                cnot_count += 1
+            qc1.append(qc[i][0], qc[i][1])
+            stop += 1
+            if cnot_count == k and i + 1 < len(qc) and qc[i+1][0].name == 'cx':
+                for x in qc[stop:]:
+                    qc2.append(x[0], x[1])
+                return qc1, qc2
 
-    return qc1, qc2
+        return qc1, qc2
+    return by_num_cnot_func
 
 
 def by_percent_depth(qc: qiskit.QuantumCircuit, percent: float) -> typing.List[qiskit.QuantumCircuit]:

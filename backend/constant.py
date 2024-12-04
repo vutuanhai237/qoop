@@ -236,11 +236,10 @@ operations = [
 
 operations_only_cnot = [
     H_gate,
-    S_gate,
-    CX_gate,
     RX_gate,
     RY_gate,
     RZ_gate,
+    CX_gate,
 ]
 
 gate_distaces = [{'name_gate1': 'i', 'name_gate2': 'i', 'distance': 0},

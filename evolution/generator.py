@@ -3,6 +3,7 @@ import qiskit
 import random
 from ..backend import constant
 from .environment_parent import Metadata
+from .environment_synthesis import MetadataSynthesis
 def initialize_random_parameters(num_qubits: int, max_operands: int, conditional: bool, seed):
     if max_operands < 1 or max_operands > 3:
         raise qiskit.circuit.exceptions.CircuitError("max_operands must be between 1 and 3")
@@ -73,9 +74,82 @@ def weighted_choice(arr, weights):
     normalized_weights = [w / total_weight for w in weights]
     return np.random.choice(arr, p=normalized_weights)
 
+def generate_random_array(num_othergate, smallest_num_gate, n):
+    # Adjust num_othergate to ensure it can be divided among n elements
+    num_othergate_adjusted = num_othergate - n * smallest_num_gate
+    
+    if num_othergate_adjusted < 0:
+        raise ValueError("num_othergate is too small to meet the condition with n elements.")
+    
+    # Generate an array of n elements, each initialized to smallest_num_gate
+    arr = [smallest_num_gate] * n
+    
+    # Distribute the remaining sum (num_othergate_adjusted) randomly among the elements
+    for i in range(n):
+        arr[i] += random.randint(0, num_othergate_adjusted)
+        num_othergate_adjusted -= arr[i] - smallest_num_gate
+        
+        if num_othergate_adjusted <= 0:
+            break
+    
+    # Adjust to ensure the total sum is exactly num_othergate
+    current_sum = sum(arr)
+    while current_sum < num_othergate:
+        arr[random.randint(0, n-1)] += 1
+        current_sum += 1
+    random.shuffle(arr)
+    return arr
 
+def by_num_cnot(metadata: MetadataSynthesis) -> qiskit.QuantumCircuit:
+    pool = constant.operations_only_cnot
+    # H,S,CX,RX,RY,RZ
+    num_qubits = metadata.num_qubits
+    depth = metadata.depth
+    num_cnot = metadata.num_cnot
+    num_gate = depth * num_qubits
+    num_othergate = num_gate - num_cnot
+    smallest_num_gate = 1 if int(0.15 * num_othergate) == 0 else int(0.15 * num_othergate)
+    # Generate random num_gates for first 4 gates
+    num_gates = generate_random_array(num_othergate, smallest_num_gate, 4)
+    
+    num_gates.append(num_cnot)
 
-def by_num_cnot(metadata: Metadata) -> qiskit.QuantumCircuit:
+    qc = qiskit.QuantumCircuit(num_qubits)
+    thetas = qiskit.circuit.ParameterVector('theta')
+    thetas_length = 0
+    full_pool = []
+    if len(pool) != len(num_gates):
+        raise ValueError("The number of gates and the number of gates to be generated must be the same")
+    for j, gate in enumerate(pool):
+        full_pool.extend([gate]*num_gates[j])
+    random.shuffle(full_pool)
+    while(len(full_pool) > 0):
+        remaining_qubits = list(range(num_qubits))
+        random.shuffle(remaining_qubits)
+        while(len(remaining_qubits) > 1):
+            if len(full_pool) == 0:
+                return qc
+            gate = full_pool[-1]
+            if gate['num_op'] > len(remaining_qubits):
+                break
+            else:
+                gate = full_pool.pop()
+            operands = remaining_qubits[:gate['num_op']]
+            remaining_qubits = [q for q in remaining_qubits if q not in operands]
+
+            num_params = gate['num_params']
+            thetas_length += num_params
+            thetas.resize(thetas_length)
+            angles = thetas[thetas_length - num_params:thetas_length]
+            op = gate['operation'](*angles)
+            qc.append(op, operands)
+    return qc
+    
+    
+    
+    
+
+def by_num_cnot_old(metadata: Metadata) -> qiskit.QuantumCircuit:
     num_qubits = metadata.num_qubits
     depth = metadata.depth
     pool = constant.operations_only_cnot
