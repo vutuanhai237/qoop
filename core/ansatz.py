@@ -294,6 +294,26 @@ def alternating_ZXZlayer(num_qubits: int = 3,
 #### Tomography ansatz  ###
 ###########################
 
+def chain_zxz_pennylane(num_qubits: int, num_layers):
+    import pennylane as qml
+    dev = qml.device("default.qubit", wires=num_qubits)
+    @qml.qnode(dev, diff_method="parameter-shift")
+    def chain_zxz_pennylane_func(thetas):
+        j = 0
+        for _ in range(0, num_layers):
+            for i in range(0, num_qubits - 1):
+                qml.CRY(thetas[j], wires=[i,i+1])
+                j += 1
+            qml.CRY(thetas[j], wires=[num_qubits - 1, 0])
+            j += 1
+            for i in range(0, num_qubits):
+                qml.RZ(thetas[j], wires=i)
+                qml.RX(thetas[j+1], wires=i)
+                qml.RZ(thetas[j+2], wires=i)
+                j += 3
+        return
+    return chain_zxz_pennylane_func
+
 
 def Wchain(num_qubits: int) -> qiskit.QuantumCircuit:
     """Create W_chain ansatz

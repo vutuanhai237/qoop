@@ -2,10 +2,10 @@ import qiskit
 from qiskit_nature.second_q.drivers import PySCFDriver
 from qiskit_nature.second_q.mappers import JordanWignerMapper
 from qiskit_nature.units import DistanceUnit
-from qiskit.algorithms.minimum_eigensolvers import VQE
+from qiskit_algorithms.minimum_eigensolvers import VQE
 from qiskit.primitives import Estimator
 from qiskit_algorithms.utils import algorithm_globals
-from qiskit.algorithms.optimizers import SLSQP
+from qiskit_algorithms.optimizers import SLSQP
 
 def general_VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
     driver = PySCFDriver(
@@ -25,20 +25,3 @@ def general_VQE(qc: qiskit.QuantumCircuit, atom: str, basis: str):
     vqe = VQE(estimator = estimator, ansatz = qc, optimizer=optimizer)
     computation_value = vqe.compute_minimum_eigenvalue(qubit_op).eigenvalue.real
     return computation_value
-
-
-V = V_optimal
-risks = []
-for u in u_test:
-    risk = abc(V)
-    risks.append(risk)
-
-risk = np.mean(risks) * 1/4
-=> ríks =?
-
-=> thetas_optimal_C
-
-Tính risk
-
-=> thetas_optimal_R1
-
