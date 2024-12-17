@@ -1,17 +1,17 @@
 import numpy as np
 
 class AMSGradOptimizer:
-    def __init__(self, eta=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
         """
         Initialize the AMSGrad optimizer.
 
         Args:
-            eta (float): Learning rate.
+            stepsize (float): Learning rate.
             beta1 (float): Exponential decay rate for the first moment estimates.
             beta2 (float): Exponential decay rate for the second moment estimates.
             epsilon (float): Small constant for numerical stability.
         """
-        self.eta = eta
+        self.stepsize = stepsize
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -42,7 +42,7 @@ class AMSGradOptimizer:
         self.v = self.beta2 * self.v + (1 - self.beta2) * np.power(grad, 2)
         v_hat = np.maximum(v_1, self.v)
 
-        theta = theta - self.eta * self.m / (np.sqrt(v_hat) + self.epsilon)
+        theta = theta - self.stepsize * self.m / (np.sqrt(v_hat) + self.epsilon)
         return theta
 
     def step_and_cost(self, objective_fn, theta, grad_fn):
@@ -62,17 +62,17 @@ class AMSGradOptimizer:
         return theta, cost
 
 class NadamOptimizer:
-    def __init__(self, eta=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
         """
         Initialize the Nadam optimizer.
 
         Args:
-            eta (float): Learning rate.
+            stepsize (float): Learning rate.
             beta1 (float): Exponential decay rate for the first moment estimates.
             beta2 (float): Exponential decay rate for the second moment estimates.
             epsilon (float): Small constant for numerical stability.
         """
-        self.eta = eta
+        self.stepsize = stepsize
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -106,7 +106,7 @@ class NadamOptimizer:
         m_hat = self.m / (1 - self.beta1**self.t)
         v_hat = self.v / (1 - self.beta2**self.t)
 
-        theta = theta -  self.eta / (np.sqrt(v_hat) + self.epsilon) * (self.beta1 * m_hat + (1 - self.beta1)
+        theta = theta -  self.stepsize / (np.sqrt(v_hat) + self.epsilon) * (self.beta1 * m_hat + (1 - self.beta1)
                                                                            * grad / (1 - self.beta1**self.t))
 
         return theta
@@ -128,17 +128,17 @@ class NadamOptimizer:
         return theta, cost
 
 class AdamaxOptimizer:
-    def __init__(self, eta=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
         """
         Initialize the Nadam optimizer.
 
         Args:
-            eta (float): Learning rate.
+            stepsize (float): Learning rate.
             beta1 (float): Exponential decay rate for the first moment estimates.
             beta2 (float): Exponential decay rate for the second moment estimates.
             epsilon (float): Small constant for numerical stability.
         """
-        self.eta = eta
+        self.stepsize = stepsize
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -167,7 +167,7 @@ class AdamaxOptimizer:
 
         m_hat = self.m / (1 - self.beta1**self.t)
 
-        theta = theta - self.eta * m_hat / (self.v + self.epsilon)
+        theta = theta - self.stepsize * m_hat / (self.v + self.epsilon)
         return theta
 
     def step_and_cost(self, objective_fn, theta, grad_fn):
@@ -187,20 +187,22 @@ class AdamaxOptimizer:
         return theta, cost
     
 class QHAdamOptimizer:
-    def __init__(self, eta=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, v1: float = 0.7, v2: float = 1.0):
         """
         Initialize the Nadam optimizer.
 
         Args:
-            eta (float): Learning rate.
+            stepsize (float): Learning rate.
             beta1 (float): Exponential decay rate for the first moment estimates.
             beta2 (float): Exponential decay rate for the second moment estimates.
             epsilon (float): Small constant for numerical stability.
         """
-        self.eta = eta
+        self.stepsize = stepsize
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
+        self.v1 = v1
+        self.v2 = v2
         self.m = None
         self.v = None
         self.t = 0
@@ -227,7 +229,7 @@ class QHAdamOptimizer:
         m_hat = self.m / (1 - self.beta1**self.t)
         v_hat = self.v / (1 - self.beta2**self.t)
 
-        theta = theta - self.eta * ((1 - self.v_1) * grad + self.v_1 * m_hat) / (np.sqrt((1 - self.v_2) * np.power(grad, 2) + self.v_2 * v_hat) + self.epsilon)
+        theta = theta - self.stepsize * ((1 - self.v1) * grad + self.v1 * m_hat) / (np.sqrt((1 - self.v2) * np.power(grad, 2) + self.v2 * v_hat) + self.epsilon)
 
         return theta
 
@@ -248,17 +250,17 @@ class QHAdamOptimizer:
         return theta, cost
     
 class RAdamOptimizer:
-    def __init__(self, eta=0.001, beta1=0.9, beta2=0.999):
+    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999):
         """
         Initialize the Nadam optimizer.
 
         Args:
-            eta (float): Learning rate.
+            stepsize (float): Learning rate.
             beta1 (float): Exponential decay rate for the first moment estimates.
             beta2 (float): Exponential decay rate for the second moment estimates.
             epsilon (float): Small constant for numerical stability.
         """
-        self.eta = eta
+        self.stepsize = stepsize
         self.beta1 = beta1
         self.beta2 = beta2
         self.p_max = 2 / (1 - self.beta2) - 1
@@ -281,19 +283,18 @@ class RAdamOptimizer:
         if self.m is None:
             self.m = np.zeros(np.shape(theta))
             self.v = np.zeros(np.shape(theta))
-        grad = grad_fn(theta)
+        grad = grad_fn(theta) + 10**(-20)
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         self.v = 1 / self.beta2 * self.v + (1 - self.beta2) * np.power(grad, 2)
-
         m_hat = self.m / (1 - self.beta1**self.t)
         p_t = self.p_max - 2 * self.t * self.beta2**self.t / (1 - self.beta2**self.t)
 
         if p_t > 4:
             l_t = np.sqrt((1 - self.beta2**self.t) / self.v)
             r_t = np.sqrt(((p_t - 4) * (p_t - 2) * self.p_max) / ((self.p_max - 4) * (self.p_max - 2) * p_t))
-            theta = theta - self.eta * r_t * m_hat * l_t
+            theta = theta - self.stepsize * r_t * m_hat * l_t
         else:
-            theta = theta - self.eta * m_hat
+            theta = theta - self.stepsize * m_hat
         return theta
 
     def step_and_cost(self, objective_fn, theta, grad_fn):
@@ -313,17 +314,17 @@ class RAdamOptimizer:
         return theta, cost
     
 class AdamWOptimizer:
-    def __init__(self, eta=0.001, beta1: float = 0.9, beta2: float = 0.999, epsilon: float = 1e-7, weight_decay: float = 0.01):
+    def __init__(self, stepsize =0.001, beta1: float = 0.9, beta2: float = 0.999, epsilon: float = 1e-7, weight_decay: float = 0.01):
         """
         Initialize the Nadam optimizer.
 
         Args:
-            eta (float): Learning rate.
+            stepsize (float): Learning rate.
             beta1 (float): Exponential decay rate for the first moment estimates.
             beta2 (float): Exponential decay rate for the second moment estimates.
             epsilon (float): Small constant for numerical stability.
         """
-        self.eta = eta
+        self.stepsize = stepsize
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -354,7 +355,7 @@ class AdamWOptimizer:
         m_hat = self.m / (1 - self.beta1**self.t)
         v_hat = self.v / (1 - self.beta2**self.t)
 
-        theta = theta - self.eta * m_hat / (np.sqrt(v_hat) + self.epsilon) + self.weight_decay * grad
+        theta = theta - self.stepsize * m_hat / (np.sqrt(v_hat) + self.epsilon) + self.weight_decay * grad
         return theta
 
     def step_and_cost(self, objective_fn, theta, grad_fn):
