@@ -20,12 +20,12 @@ class AMSGradOptimizer:
         self.v_hat = None
         self.t = 0
 
-    def step(self, gradient_fn, theta):
+    def step(self, theta, grad_fn):
         """
         Perform a single optimization step using AMSGrad.
 
         Args:
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
@@ -35,7 +35,7 @@ class AMSGradOptimizer:
             self.m = np.zeros_like(theta)
             self.v = np.zeros_like(theta)
             self.v_hat = np.zeros_like(theta)
-        grad = gradient_fn(theta)
+        grad = grad_fn(theta)
 
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         v_1 = self.v
@@ -45,19 +45,19 @@ class AMSGradOptimizer:
         theta = theta - self.eta * self.m / (np.sqrt(v_hat) + self.epsilon)
         return theta
 
-    def step_and_cost(self, objective_fn, gradient_fn, theta):
+    def step_and_cost(self, objective_fn, theta, grad_fn):
         """
         Perform a single optimization step and return the updated parameters and cost.
 
         Args:
             objective_fn (callable): Function to compute the cost of the objective function.
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
             tuple: Updated parameters and the cost of the objective function.
         """
-        theta = self.step(gradient_fn, theta)
+        theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
 
@@ -80,12 +80,12 @@ class NadamOptimizer:
         self.v = None
         self.t = 0
 
-    def step(self, gradient_fn, theta):
+    def step(self, theta, grad_fn):
         """
         Perform a single optimization step using Nadam.
 
         Args:
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
@@ -94,7 +94,7 @@ class NadamOptimizer:
         if self.m is None:
             self.m = np.zeros_like(theta)
             self.v = np.zeros_like(theta)
-        grad = gradient_fn(theta)
+        grad = grad_fn(theta)
         self.t += 1
         if self.m is None:
             self.m = np.zeros(np.shape(grad))
@@ -111,19 +111,19 @@ class NadamOptimizer:
 
         return theta
 
-    def step_and_cost(self, objective_fn, gradient_fn, theta):
+    def step_and_cost(self, objective_fn, theta, grad_fn):
         """
         Perform a single optimization step and return the updated parameters and cost.
 
         Args:
             objective_fn (callable): Function to compute the cost of the objective function.
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
             tuple: Updated parameters and the cost of the objective function.
         """
-        theta = self.step(gradient_fn, theta)
+        theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
 
@@ -146,12 +146,12 @@ class AdamaxOptimizer:
         self.v = None
         self.t = 0
 
-    def step(self, gradient_fn, theta):
+    def step(self, theta, grad_fn):
         """
         Perform a single optimization step using Nadam.
 
         Args:
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
@@ -161,7 +161,7 @@ class AdamaxOptimizer:
         if self.m is None:
             self.m = np.zeros(np.shape(theta))
             self.v = np.zeros(np.shape(theta))
-        grad = gradient_fn(theta)
+        grad = grad_fn(theta)
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         self.v = np.maximum(self.beta2 * self.v, np.abs(grad))
 
@@ -170,19 +170,19 @@ class AdamaxOptimizer:
         theta = theta - self.eta * m_hat / (self.v + self.epsilon)
         return theta
 
-    def step_and_cost(self, objective_fn, gradient_fn, theta):
+    def step_and_cost(self, objective_fn, theta, grad_fn):
         """
         Perform a single optimization step and return the updated parameters and cost.
 
         Args:
             objective_fn (callable): Function to compute the cost of the objective function.
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
             tuple: Updated parameters and the cost of the objective function.
         """
-        theta = self.step(gradient_fn, theta)
+        theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
     
@@ -205,12 +205,12 @@ class QHAdamOptimizer:
         self.v = None
         self.t = 0
 
-    def step(self, gradient_fn, theta):
+    def step(self, theta, grad_fn):
         """
         Perform a single optimization step using Nadam.
 
         Args:
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
@@ -220,7 +220,7 @@ class QHAdamOptimizer:
         if self.m is None:
             self.m = np.zeros(np.shape(theta))
             self.v = np.zeros(np.shape(theta))
-        grad = gradient_fn(theta)
+        grad = grad_fn(theta)
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         self.v = self.beta2 * self.v + (1 - self.beta2) * np.power(grad, 2)
 
@@ -231,19 +231,19 @@ class QHAdamOptimizer:
 
         return theta
 
-    def step_and_cost(self, objective_fn, gradient_fn, theta):
+    def step_and_cost(self, objective_fn, theta, grad_fn):
         """
         Perform a single optimization step and return the updated parameters and cost.
 
         Args:
             objective_fn (callable): Function to compute the cost of the objective function.
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
             tuple: Updated parameters and the cost of the objective function.
         """
-        theta = self.step(gradient_fn, theta)
+        theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
     
@@ -266,12 +266,12 @@ class RAdamOptimizer:
         self.m = None 
         self.v = None
 
-    def step(self, gradient_fn, theta):
+    def step(self, theta, grad_fn):
         """
         Perform a single optimization step using Nadam.
 
         Args:
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
@@ -281,7 +281,7 @@ class RAdamOptimizer:
         if self.m is None:
             self.m = np.zeros(np.shape(theta))
             self.v = np.zeros(np.shape(theta))
-        grad = gradient_fn(theta)
+        grad = grad_fn(theta)
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         self.v = 1 / self.beta2 * self.v + (1 - self.beta2) * np.power(grad, 2)
 
@@ -296,19 +296,19 @@ class RAdamOptimizer:
             theta = theta - self.eta * m_hat
         return theta
 
-    def step_and_cost(self, objective_fn, gradient_fn, theta):
+    def step_and_cost(self, objective_fn, theta, grad_fn):
         """
         Perform a single optimization step and return the updated parameters and cost.
 
         Args:
             objective_fn (callable): Function to compute the cost of the objective function.
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
             tuple: Updated parameters and the cost of the objective function.
         """
-        theta = self.step(gradient_fn, theta)
+        theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
     
@@ -332,12 +332,12 @@ class AdamWOptimizer:
         self.m = None 
         self.v = None
 
-    def step(self, gradient_fn, theta):
+    def step(self, theta, grad_fn):
         """
         Perform a single optimization step using Nadam.
 
         Args:
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
@@ -347,7 +347,7 @@ class AdamWOptimizer:
         if self.m is None:
             self.m = np.zeros(np.shape(theta))
             self.v = np.zeros(np.shape(theta))
-        grad = gradient_fn(theta)
+        grad = grad_fn(theta)
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         self.v = self.beta2 * self.v + (1 - self.beta2) * np.power(grad, 2)
 
@@ -357,18 +357,18 @@ class AdamWOptimizer:
         theta = theta - self.eta * m_hat / (np.sqrt(v_hat) + self.epsilon) + self.weight_decay * grad
         return theta
 
-    def step_and_cost(self, objective_fn, gradient_fn, theta):
+    def step_and_cost(self, objective_fn, theta, grad_fn):
         """
         Perform a single optimization step and return the updated parameters and cost.
 
         Args:
             objective_fn (callable): Function to compute the cost of the objective function.
-            gradient_fn (callable): Function to compute the gradient of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
             theta (numpy.ndarray): Current parameters.
 
         Returns:
             tuple: Updated parameters and the cost of the objective function.
         """
-        theta = self.step(gradient_fn, theta)
+        theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
