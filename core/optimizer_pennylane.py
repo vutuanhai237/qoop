@@ -1,7 +1,7 @@
 import numpy as np
 
 class AMSGradOptimizer:
-    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999, epsilon=1e-8):
         """
         Initialize the AMSGrad optimizer.
 
@@ -62,7 +62,7 @@ class AMSGradOptimizer:
         return theta, cost
 
 class NadamOptimizer:
-    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999, epsilon=1e-8):
         """
         Initialize the Nadam optimizer.
 
@@ -128,7 +128,7 @@ class NadamOptimizer:
         return theta, cost
 
 class AdamaxOptimizer:
-    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999, epsilon=1e-8):
         """
         Initialize the Nadam optimizer.
 
@@ -187,7 +187,7 @@ class AdamaxOptimizer:
         return theta, cost
     
 class QHAdamOptimizer:
-    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, v1: float = 0.7, v2: float = 1.0):
+    def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999, epsilon=1e-8, v1: float = 0.7, v2: float = 1.0):
         """
         Initialize the Nadam optimizer.
 
@@ -250,7 +250,7 @@ class QHAdamOptimizer:
         return theta, cost
     
 class RAdamOptimizer:
-    def __init__(self, stepsize =0.001, beta1=0.9, beta2=0.999):
+    def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999):
         """
         Initialize the Nadam optimizer.
 
