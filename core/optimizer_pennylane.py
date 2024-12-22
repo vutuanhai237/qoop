@@ -96,9 +96,6 @@ class NadamOptimizer:
             self.v = np.zeros_like(theta)
         grad = grad_fn(theta)
         self.t += 1
-        if self.m is None:
-            self.m = np.zeros(np.shape(grad))
-            self.v = np.zeros(np.shape(grad))
 
         self.m = self.beta1 * self.m + (1 - self.beta1) * grad
         self.v = self.beta2 * self.v + (1 - self.beta2) * np.power(grad, 2)

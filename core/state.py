@@ -552,3 +552,27 @@ def time_dependent_qc_inverse(num_qubits: int,h_opt, t):
     qc.append(unitary_gate, range(qc.num_qubits))
 
     return qc
+
+
+def time_dependent_u(num_qubits: int,h_opt, t):
+    """create U circuit from h_opt and time t
+    
+    Args:
+        - qc (QuantumCircuit): Init circuit
+        - h_opt: Hamiltonian
+        - t (float): time
+        
+    Returns:
+        - QuantumCircuit: the added circuit
+    """
+    #Create circuit
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    
+    # Ensure h_opt is Hermitian
+    if not np.allclose(h_opt.to_matrix(), np.conj(h_opt.to_matrix()).T):
+        raise ValueError("The Hamiltonian is not Hermitian.")
+
+    # Calculate the unitary matrix
+    U = expm(1j * t * h_opt.to_matrix())
+
+    return U
