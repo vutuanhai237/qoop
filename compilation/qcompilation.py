@@ -321,7 +321,7 @@ class QuantumCompilation():
 
         if verbose == 1:
             bar.close()
-        # self.calculate_metrics()
+        self.calculate_metrics()
         return self
 
     def calculate_metrics(self) -> None:
