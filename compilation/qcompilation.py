@@ -116,26 +116,37 @@ class QuantumCompilation():
                 'The V dagger part must be a determined quantum circuit')
         return 1
 
-    def set_metrics_func(self, _metrics_func: typing.List[types.FunctionType] | typing.List[str]) -> int:
-        """Set the metric function for compiler
+    # def set_metrics_func(self, _metrics_func: typing.List[types.FunctionType] | typing.List[str]) -> int:
+    #     """Set the metric function for compiler
 
-        Args:
-            - _metrics_func (typing.List[types.FunctionType] | typing.List[str])
+    #     Args:
+    #         - _metrics_func (typing.List[types.FunctionType] | typing.List[str])
 
-        Raises:
-            - ValueError: when you pass wrong type
-        Returns:
-            - int: 1 means success
-        """
+    #     Raises:
+    #         - ValueError: when you pass wrong type
+    #     Returns:
+    #         - int: 1 means success
+    #     """
+    #     for _metric_func in _metrics_func:
+    #         if callable(_metric_func):
+    #             self.metrics_func[_metric_func.__name__] = _metric_func
+    #         elif isinstance(_metric_func, str):
+    #             self.metrics_func[_metric_func] = getattr(metric, _metric_func)
+    #         else:
+    #             raise ValueError(
+    #                 'The metric function must be a function f: u, vdagger, thetas -> metric value or string in qsee.core.metric or self-define')
+    #     return
+    
+    def set_metrics_func(self, _metrics_func: typing.List[str] = constant.DEFAULT_COMPILATION_METRICS) -> int:
+        self.metrics_func = {}
         for _metric_func in _metrics_func:
-            if callable(_metric_func):
-                self.metrics_func[_metric_func.__name__] = _metric_func
-            elif isinstance(_metric_func, str):
+            if callable(getattr(metric, _metric_func)):
+                self.metrics_func[_metric_func] = getattr(metric, _metric_func)
+            elif _metric_func in dir(metric):
                 self.metrics_func[_metric_func] = getattr(metric, _metric_func)
             else:
-                raise ValueError(
-                    'The metric function must be a function f: u, vdagger, thetas -> metric value or string in qsee.core.metric or self-define')
-        return
+                raise ValueError(f"The metric function '{_metric_func}' is not found in metric module.")
+        return 1
 
     def set_optimizer(self, _optimizer: types.FunctionType | str) -> int:
         """Change the optimizer of the compiler.
