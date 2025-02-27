@@ -492,6 +492,20 @@ def WalltoallCNOT(num_qubits: int, limit=0) -> qiskit.QuantumCircuit:
                 return qc
     return qc
 
+def Wchain_xyz(num_qubits: int, num_layers: int = 1) -> qiskit.QuantumCircuit:
+    """Create Wchain + XYZ
+    Args:
+        - num_qubits (int)
+        - num_layers (int, optional): Defaults to 1.
+
+    Returns:
+        - qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    for _ in range(0, num_layers):
+        qc = utilities.compose_circuit([qc, Wchain(num_qubits),
+                                        xyz_layer(num_qubits)])
+    return qc
 
 def Wchain_zxz(num_qubits: int, num_layers: int = 1) -> qiskit.QuantumCircuit:
     """Create Wchain + ZXZ
@@ -538,6 +552,24 @@ def Walltoall_zxz(num_qubits: int, num_layers: int = 1, limit=0) -> qiskit.Quant
     for _ in range(0, num_layers):
         qc = utilities.compose_circuit(
             [qc, Walltoall(num_qubits, limit=limit), zxz_layer(num_qubits)])
+    return qc
+
+def WchainCNOT_xyz(num_qubits: int = 3,
+                                  num_layers: int = 1) -> qiskit.QuantumCircuit:
+    """Create WalltoallCNOT + ZXZ
+
+    Args:
+        - num_qubits (int, optional): efaults to 3.
+        - num_layers (int, optional): Defaults to 1.
+        - limit (int, optional): Defaults to 0.
+
+    Returns:
+        qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    for _ in range(0, num_layers):
+        qc = utilities.compose_circuit(
+            [qc, WchainCNOT(num_qubits), xyz_layer(num_qubits)])
     return qc
 
 def zxz_WchainCNOT(num_qubits: int = 3,
@@ -615,6 +647,21 @@ def WalltoallCNOT_zxz(num_qubits: int = 3,
             [qc, WalltoallCNOT(qc, limit=limit), zxz_layer(num_qubits)])
     return qc
 
+def xyz_layer(num_qubits: int = 3, num_layers: int = 1) -> qiskit.QuantumCircuit:
+    """XYZ layer
+
+    Args:
+        - num_qubits (int, optional): Defaults to 3.
+        - num_layers (int, optional): Defaults to 1.
+
+    Returns:
+        - qiskit.QuantumCircuit: parameterized quantum circuit
+    """
+    qc = qiskit.QuantumCircuit(num_qubits, num_qubits)
+    for _ in range(0, num_layers):
+        qc = utilities.compose_circuit(
+            [qc, rx_layer(num_qubits), ry_layer(num_qubits), rz_layer(num_qubits)])
+    return qc
 
 def zxz_layer(num_qubits: int = 3, num_layers: int = 1) -> qiskit.QuantumCircuit:
     """ZXZ layer
