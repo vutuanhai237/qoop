@@ -1,5 +1,54 @@
 import numpy as np
 
+class SGDNoiseOptimizer:
+    def __init__(self, stepsize =0.001, std = 0.01):
+        """
+        Initialize the AMSGrad optimizer.
+
+        Args:
+            stepsize (float): Learning rate.
+        """
+        self.stepsize = stepsize
+        self.v = None
+        self.v_hat = None
+        self.t = 0
+        self.std = std
+
+    def step(self, theta, grad_fn):
+        grad = grad_fn(theta)
+        noise = np.random.normal(0, self.std, size=len(grad))
+        theta = theta - self.stepsize * (grad + noise)
+        return theta
+
+    def step_and_cost(self, objective_fn, theta, grad_fn):
+        theta = self.step(theta, grad_fn)
+        cost = objective_fn(theta)
+        return theta, cost
+    
+class SGDOptimizer:
+    def __init__(self, stepsize =0.001):
+        """
+        Initialize the AMSGrad optimizer.
+
+        Args:
+            stepsize (float): Learning rate.
+        """
+        self.stepsize = stepsize
+        self.v = None
+        self.v_hat = None
+        self.t = 0
+
+    def step(self, theta, grad_fn):
+        grad = grad_fn(theta)
+        theta = theta - self.stepsize * grad
+        return theta
+
+    def step_and_cost(self, objective_fn, theta, grad_fn):
+        theta = self.step(theta, grad_fn)
+        cost = objective_fn(theta)
+        return theta, cost
+
+
 class AMSGradOptimizer:
     def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999, epsilon=1e-8):
         """
