@@ -1,5 +1,68 @@
 import numpy as np
 
+class AdamaxNoiseOptimizer:
+    def __init__(self, stepsize =0.001, beta1=0.8, beta2=0.999, epsilon=1e-8, std = 0.01):
+        """
+        Initialize the Nadam optimizer.
+
+        Args:
+            stepsize (float): Learning rate.
+            beta1 (float): Exponential decay rate for the first moment estimates.
+            beta2 (float): Exponential decay rate for the second moment estimates.
+            epsilon (float): Small constant for numerical stability.
+        """
+        self.stepsize = stepsize
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        self.m = None
+        self.v = None
+        self.t = 0
+        self.std = std
+
+    def step(self, theta, grad_fn):
+        """
+        Perform a single optimization step using Nadam.
+
+        Args:
+            grad_fn (callable): Function to compute the gradient of the objective function.
+            theta (numpy.ndarray): Current parameters.
+
+        Returns:
+            numpy.ndarray: Updated parameters.
+        """
+        self.t += 1
+        if self.m is None:
+            self.m = np.zeros(np.shape(theta))
+            self.v = np.zeros(np.shape(theta))
+        
+        grad = grad_fn(theta)
+        noise = np.random.normal(0, self.std, size=len(grad))
+        grad += noise
+        self.m = self.beta1 * self.m + (1 - self.beta1) * grad
+        self.v = np.maximum(self.beta2 * self.v, np.abs(grad))
+
+        m_hat = self.m / (1 - self.beta1**self.t)
+
+        theta = theta - self.stepsize * m_hat / (self.v + self.epsilon)
+        return theta
+
+    def step_and_cost(self, objective_fn, theta, grad_fn):
+        """
+        Perform a single optimization step and return the updated parameters and cost.
+
+        Args:
+            objective_fn (callable): Function to compute the cost of the objective function.
+            grad_fn (callable): Function to compute the gradient of the objective function.
+            theta (numpy.ndarray): Current parameters.
+
+        Returns:
+            tuple: Updated parameters and the cost of the objective function.
+        """
+        theta = self.step(theta, grad_fn)
+        cost = objective_fn(theta)
+        return theta, cost
+    
 class SGDNoiseOptimizer:
     def __init__(self, stepsize =0.001, std = 0.01):
         """
@@ -24,7 +87,8 @@ class SGDNoiseOptimizer:
         theta = self.step(theta, grad_fn)
         cost = objective_fn(theta)
         return theta, cost
-    
+
+
 class SGDOptimizer:
     def __init__(self, stepsize =0.001):
         """
