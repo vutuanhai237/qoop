@@ -1,7 +1,8 @@
 import qiskit
 import qiskit.quantum_info as qi
 import numpy as np, typing, types
-from qiskit.primitives import Sampler
+from qiskit_aer.primitives import Sampler, Estimator
+
 # from qiskit.providers.aer import noise
 # from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
 from ..backend import constant

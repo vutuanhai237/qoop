@@ -1,5 +1,5 @@
 from ..core import ansatz, measure
-from qiskit.primitives import Sampler
+from qiskit_aer.primitives import Sampler, Estimator
 import numpy as np
 import qiskit
 import qiskit.quantum_info as qi
